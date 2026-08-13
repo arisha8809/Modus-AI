@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from ..db.models import ResearchTopic, SubQuestion, Source, Finding, Conclusion, PipelineEvent
 from ..db import vector_store
 from .classifier_agent import classify_and_plan
-from .web_tools import search_web, fetch_page_text
+from .web_tools import search_web
 from .extraction_agent import extract_findings
 from .evidence_agent import compare_evidence
 from .synthesis_agent import synthesize
@@ -64,7 +64,7 @@ def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 3):
 
             for r in results:
                 # --- Stage 3: Collect + store sources ---
-                page_text = fetch_page_text(r["url"])
+                page_text = r.get("content")
                 source = Source(
                     sub_question_id=sub_q.id,
                     url=r["url"],

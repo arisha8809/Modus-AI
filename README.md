@@ -42,8 +42,7 @@ and every past research run remains searchable.
 │  DATA & KNOWLEDGE    SQLite (structured, relational, persistent) │
 │                      + ChromaDB (vector store, semantic search)  │
 ├─────────────────────────────────────────────────────────────────┤
-│  EXTERNAL RESEARCH   DuckDuckGo search + trafilatura page fetch  │
-│                      (both free, no API key)                    │
+│  EXTERNAL RESEARCH   Tavily search API (agent-oriented, free tier)        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -70,6 +69,7 @@ Full detail, including why each choice was made, is in [`docs/architecture.md`](
 ### 1. Prerequisites
 - Python 3.11+
 - A free Groq API key: [console.groq.com](https://console.groq.com) (no credit card required)
+- A free Tavily API key: [tavily.com](https://tavily.com) (1,000 free searches/month, no card)
 
 ### 2. Setup
 ```bash

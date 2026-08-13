@@ -19,8 +19,8 @@ this workload, both free.
 2. Create a new **Web Service** on [render.com](https://render.com), connect the GitHub repo.
 3. Build command: `pip install -r requirements.txt`
 4. Start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-5. Add environment variable `GROQ_API_KEY` (from console.groq.com) in Render's dashboard —
-   never commit this to the repo.
+5. Add environment variables `GROQ_API_KEY` (from console.groq.com) and `TAVILY_API_KEY`
+   (from tavily.com) in Render's dashboard — never commit these to the repo.
 6. Attach a **persistent disk** mounted at `/opt/render/project/src/data` (Render's free tier
    supports a small persistent disk) so SQLite/Chroma survive restarts and redeploys. Set the
    `DATA_DIR` environment variable to match.

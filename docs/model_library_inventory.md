@@ -8,7 +8,7 @@ and — for any free-tier external service — what happens if it becomes paid o
 | Component | Provider | Model | Cost | Licence |
 |---|---|---|---|---|
 | LLM (all agents) | Groq | `llama-3.3-70b-versatile` (Meta's open-weight Llama 3.3) | Free tier (no card required) | Llama 3.3 Community License (model); Groq API usage under Groq's free-tier terms |
-| Embeddings | ChromaDB default (`sentence-transformers/all-MiniLM-L6-v2`) | runs locally | Free, open-source | Apache 2.0 |
+| Embeddings | scikit-learn `HashingVectorizer` (stateless, offline, no model download) | runs locally | Free, open-source | BSD |
 
 **If Groq's free tier becomes paid or unavailable:** all LLM calls go through a single file
 (`backend/agents/llm_client.py`). Swapping to another OpenAI-compatible free provider (e.g.
@@ -26,8 +26,7 @@ about the underlying provider.
 | Pydantic | API schema validation | MIT |
 | Streamlit | Frontend UI framework | Apache 2.0 |
 | ChromaDB | Local vector store | Apache 2.0 |
-| `ddgs` (DuckDuckGo Search) | Free web search, no API key | MIT |
-| `trafilatura` | Clean text extraction from fetched web pages | Apache 2.0 / GPL dual-licensed (used under Apache 2.0 terms) |
+| `tavily-python` | Web search API purpose-built for AI agents, with content extraction included in the response | MIT |
 | `groq` (Python SDK) | Client for the Groq API | Apache 2.0 |
 | `python-dotenv` | Loads `.env` config | BSD |
 
