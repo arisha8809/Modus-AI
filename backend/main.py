@@ -9,6 +9,9 @@ See README.md for the full architecture and setup instructions.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()  # reads .env into the process environment before anything else runs
 
 from .db.session import init_db
 from .routes.research import router as research_router
