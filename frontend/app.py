@@ -674,6 +674,170 @@ def inject_base_styles():
             box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
         }
 
+        .exec-hero {
+            margin: 0.95rem 0 0.8rem;
+            padding: 1.2rem 1.3rem;
+            border: 1px solid #c7d2fe;
+            border-radius: 17px;
+            background: linear-gradient(110deg, #eef2ff 0%, #ffffff 72%);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+        }
+
+        .exec-kicker {
+            color: #4338ca !important;
+            font-size: 0.66rem;
+            font-weight: 850;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .exec-headline {
+            max-width: 940px;
+            margin-top: 0.42rem;
+            color: #0f172a !important;
+            font-size: 1.35rem;
+            font-weight: 820;
+            line-height: 1.3;
+        }
+
+        .exec-subline {
+            margin-top: 0.48rem;
+            color: #475569 !important;
+            font-size: 0.78rem;
+            line-height: 1.45;
+        }
+
+        .exec-kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.7rem;
+            margin: 0.8rem 0 1rem;
+        }
+
+        .exec-kpi {
+            min-height: 84px;
+            padding: 0.82rem 0.9rem;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: #ffffff;
+            box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .exec-kpi-value {
+            color: #0f172a !important;
+            font-size: 1.38rem;
+            font-weight: 850;
+            line-height: 1;
+        }
+
+        .exec-kpi-label {
+            margin-top: 0.4rem;
+            color: #475569 !important;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .exec-insight-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 0.7rem 0 1.15rem;
+        }
+
+        .exec-insight-card {
+            min-height: 108px;
+            padding: 0.9rem 0.95rem;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #ffffff;
+        }
+
+        .exec-insight-label {
+            color: #64748b !important;
+            font-size: 0.65rem;
+            font-weight: 850;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .exec-insight-title {
+            margin-top: 0.35rem;
+            color: #0f172a !important;
+            font-size: 0.88rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .exec-insight-copy {
+            margin-top: 0.28rem;
+            color: #475569 !important;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .exec-section-title {
+            margin: 1.15rem 0 0.18rem;
+            color: #0f172a !important;
+            font-size: 1.02rem;
+            font-weight: 820;
+        }
+
+        .exec-section-note {
+            margin: 0 0 0.55rem;
+            color: #64748b !important;
+            font-size: 0.77rem;
+        }
+
+        .exec-event-strip {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.55rem;
+            margin: 0.65rem 0 1rem;
+        }
+
+        .exec-event-card {
+            min-height: 78px;
+            padding: 0.72rem 0.78rem;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 13px rgba(15, 23, 42, 0.04);
+        }
+
+        .exec-event-top {
+            display: flex;
+            align-items: center;
+            gap: 0.38rem;
+            color: #64748b !important;
+            font-size: 0.61rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .exec-event-dot {
+            width: 8px;
+            height: 8px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+        }
+
+        .exec-event-high { background: #dc2626; }
+        .exec-event-medium { background: #d97706; }
+        .exec-event-low { background: #2563eb; }
+
+        .exec-event-date { color: #334155 !important; }
+        .exec-event-kind { color: #64748b !important; }
+        .exec-event-title {
+            margin-top: 0.43rem;
+            color: #0f172a !important;
+            font-size: 0.76rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
         .signal-kicker {
             color: var(--muted);
             font-size: 0.66rem;
@@ -892,6 +1056,8 @@ def inject_base_styles():
             .status-pill { display: none; }
             .hero { padding: 1.55rem 1.25rem; border-radius: 18px; }
             .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .exec-kpi-row, .exec-insight-grid { grid-template-columns: 1fr 1fr; }
+            .exec-event-strip { grid-template-columns: 1fr 1fr; }
             .workspace-heading { display: block; }
             .difference-banner { grid-template-columns: 1fr; }
             .signal-grid { grid-template-columns: 1fr; }
@@ -1244,6 +1410,190 @@ def render_major_events_timeline(analytics: dict):
     st.markdown(f"<div class=\"major-timeline\">{''.join(items)}</div>", unsafe_allow_html=True)
 
 
+def _clip(value: str, limit: int = 190) -> str:
+    text = " ".join(str(value or "").split())
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def render_compact_event_strip(analytics: dict, limit: int = 5):
+    events = (analytics or {}).get("timeline_events", [])[:limit]
+    if not events:
+        st.markdown(
+            '<div class="timeline-empty">No dated milestones were found in this run. The detailed evidence view remains available below.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    cards = []
+    for event in events:
+        impact = str(event.get("impact_level") or "medium").lower()
+        if impact not in {"high", "medium", "low"}:
+            impact = "medium"
+        date = escape(str(event.get("event_date") or "Date unavailable"))
+        title = escape(str(event.get("title") or "Untitled milestone"))
+        kind = escape(str(event.get("event_type") or "milestone").replace("_", " "))
+        cards.append(
+            f'<div class="exec-event-card"><div class="exec-event-top"><span class="exec-event-dot exec-event-{impact}"></span>'
+            f'<span class="exec-event-date">{date}</span><span class="exec-event-kind">{kind}</span></div>'
+            f'<div class="exec-event-title">{title}</div></div>'
+        )
+    st.markdown(f'<div class="exec-event-strip">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+
+def render_executive_summary(detail: dict, analytics: dict):
+    stats = detail.get("stats", {})
+    conclusions = detail.get("conclusions", [])
+    rows = [row for row in (analytics or {}).get("sub_question_breakdown", []) if row.get("finding_count", 0)]
+    signals = (analytics or {}).get("decision_signals", {})
+    strongest = signals.get("strongest_evidence", [])
+    gaps = signals.get("coverage_gaps", [])
+    needs_review = signals.get("needs_review", [])
+
+    headline = _clip(conclusions[0].get("text") if conclusions else "The research run did not produce a clear headline conclusion.", 230)
+    findings = stats.get("finding_count", 0)
+    corroborated = stats.get("corroborated_count", 0)
+    support_rate = round((corroborated / findings) * 100) if findings else 0
+    event_count = (analytics or {}).get("timeline_event_count", 0)
+    source_count = stats.get("source_count", 0)
+    domain = escape(str(detail.get("domain") or "general research"))
+
+    st.markdown(
+        f'<div class="exec-hero"><div class="exec-kicker">Executive readout · {domain}</div>'
+        f'<div class="exec-headline">{escape(headline)}</div>'
+        f'<div class="exec-subline">A fast view of what the evidence says, where the impact is concentrated, and what still needs review.</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    kpis = [
+        (support_rate, "corroborated support", "%"),
+        (source_count, "sources reviewed", ""),
+        (event_count, "dated milestones", ""),
+        (stats.get("contradiction_count", 0), "open conflicts", ""),
+    ]
+    kpi_html = "".join(
+        f'<div class="exec-kpi"><div class="exec-kpi-value">{value}{suffix}</div><div class="exec-kpi-label">{label}</div></div>'
+        for value, label, suffix in kpis
+    )
+    st.markdown(f'<div class="exec-kpi-row">{kpi_html}</div>', unsafe_allow_html=True)
+
+    strongest_text = _clip(strongest[0], 105) if strongest else "No theme has enough corroboration yet."
+    gap_text = _clip(gaps[0], 105) if gaps else "No major coverage gap was flagged."
+    review_text = _clip(needs_review[0], 105) if needs_review else ("No direct conflict detected." if not stats.get("contradiction_count") else "Review the open evidence conflicts.")
+    insight_cards = [
+        ("Strongest area", strongest_text, "Most supported theme"),
+        ("Watch next", gap_text, "Where more research is needed"),
+        ("Risk signal", review_text, "What may change the conclusion"),
+    ]
+    insight_html = "".join(
+        f'<div class="exec-insight-card"><div class="exec-insight-label">{label}</div>'
+        f'<div class="exec-insight-title">{escape(title)}</div><div class="exec-insight-copy">{escape(copy)}</div></div>'
+        for label, title, copy in insight_cards
+    )
+    st.markdown(f'<div class="exec-insight-grid">{insight_html}</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="exec-section-title">Impact map</div><div class="exec-section-note">Two visuals answer “where is the impact?” and “what is the evidence made of?”</div>', unsafe_allow_html=True)
+    chart_col, source_col = st.columns([1.28, 0.72], gap="large")
+    with chart_col:
+        render_theme_evidence_chart(analytics)
+    with source_col:
+        render_source_portfolio_chart(analytics)
+
+    st.markdown(f'<div class="exec-section-title">What changed over time · {event_count} milestones</div><div class="exec-section-note">A compact chronology of the most important dated events; open the detail view for full provenance.</div>', unsafe_allow_html=True)
+    render_compact_event_strip(analytics)
+
+    if rows:
+        top_theme = max(rows, key=lambda row: row.get("corroborated_count", 0))
+        st.caption(f"Most supported theme: {_clip(top_theme.get('sub_question', ''), 150)}")
+
+
+def render_detailed_dossier(detail: dict, analytics: dict, topic_id: int):
+    render_metric_row(detail["stats"])
+    render_difference_banner()
+    render_decision_signal_board(analytics)
+
+    evidence_col, source_col = st.columns([1.25, 0.75], gap="large")
+    with evidence_col:
+        st.markdown("#### Evidence by research theme")
+        st.caption("This shows where the pipeline has strong, single-source, or disputed coverage.")
+        render_theme_evidence_chart(analytics)
+    with source_col:
+        st.markdown("#### Source portfolio")
+        st.caption("A transparent view of the source mix behind the dossier.")
+        render_source_portfolio_chart(analytics)
+
+    event_count = analytics.get("timeline_event_count", 0)
+    st.markdown(f"#### Major events & market milestones · {event_count}")
+    st.caption("Dated launches, regulations, company moves, market events, and adoption milestones extracted from the research sources.")
+    render_major_events_timeline(analytics)
+
+    st.markdown("#### Research horizon")
+    st.caption("Publication-year signals separate current evidence from historical context without inventing dates.")
+    render_timeline_chart(analytics)
+
+    st.markdown("### Evidence profile")
+    chart_col, insight_col = st.columns([1.15, 0.85], gap="large")
+    with chart_col:
+        render_classification_chart(detail["stats"])
+    with insight_col:
+        st.markdown(
+            """
+            <div class="surface">
+                <p class="surface-copy">
+                    <strong>Corroborated</strong> findings are supported by more than one source.
+                    <strong>Contested</strong> findings contain disagreement. <strong>Single-source</strong>
+                    findings are useful signals that still need additional confirmation.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("### Conclusions")
+    st.caption("Each conclusion is linked to the findings and source URLs that support it.")
+    for index, conclusion in enumerate(detail["conclusions"], start=1):
+        render_conclusion_card(index, conclusion)
+
+    if detail["contradictions"]:
+        st.markdown("### Contradictions detected")
+        st.caption("These source-level disagreements are retained as structured evidence.")
+        for contradiction in detail["contradictions"]:
+            render_contradiction_card(contradiction)
+
+    st.markdown("### Complete findings")
+    st.caption("Every extracted finding is grouped by the sub-question it answers.")
+    for group in detail["findings_by_sub_question"]:
+        st.markdown(
+            f'<div class="surface-title">{escape(group["sub_question"])} · {len(group["findings"])} findings</div>',
+            unsafe_allow_html=True,
+        )
+        if group["findings"]:
+            frame = pd.DataFrame(
+                [
+                    {
+                        "Claim": finding["claim"],
+                        "Detail": finding["detail"] or "",
+                        "Classification": finding["classification"].replace("_", " "),
+                        "Source": finding["source_url"],
+                    }
+                    for finding in group["findings"]
+                ]
+            )
+            st.dataframe(
+                frame,
+                use_container_width=True,
+                hide_index=True,
+                column_config={"Source": st.column_config.LinkColumn("Source")},
+            )
+            st.download_button(
+                "Download findings as CSV",
+                frame.to_csv(index=False),
+                file_name=f"findings_{topic_id}.csv",
+                key=f"dl_{group['sub_question'][:20]}_{topic_id}",
+            )
+        else:
+            st.caption("No findings were extracted for this sub-question.")
+
+
 def _confidence(findings: list[dict]):
     if not findings:
         return "Unverified", "single_source"
@@ -1433,90 +1783,9 @@ with tab_new:
                 with results_box.container():
                     if detail["status"] == "done":
                         analytics = detail.get("analytics", {})
-                        render_metric_row(detail["stats"])
-                        render_difference_banner()
-                        render_decision_signal_board(analytics)
-
-                        evidence_col, source_col = st.columns([1.25, 0.75], gap="large")
-                        with evidence_col:
-                            st.markdown("#### Evidence by research theme")
-                            st.caption("This shows where the pipeline has strong, single-source, or disputed coverage.")
-                            render_theme_evidence_chart(analytics)
-                        with source_col:
-                            st.markdown("#### Source portfolio")
-                            st.caption("A transparent view of the source mix behind the dossier.")
-                            render_source_portfolio_chart(analytics)
-
-                        event_count = analytics.get("timeline_event_count", 0)
-                        st.markdown(f"#### Major events & market milestones · {event_count}")
-                        st.caption("Dated launches, regulations, company moves, market events, and adoption milestones extracted from the research sources.")
-                        render_major_events_timeline(analytics)
-
-                        st.markdown("#### Research horizon")
-                        st.caption("Publication-year signals separate current evidence from historical context without inventing dates.")
-                        render_timeline_chart(analytics)
-
-                        st.markdown("### Evidence profile")
-                        chart_col, insight_col = st.columns([1.15, 0.85], gap="large")
-                        with chart_col:
-                            render_classification_chart(detail["stats"])
-                        with insight_col:
-                            st.markdown(
-                                """
-                                <div class="surface">
-                                    <p class="surface-copy">
-                                        <strong>Corroborated</strong> findings are supported by more than one source.
-                                        <strong>Contested</strong> findings contain disagreement. <strong>Single-source</strong>
-                                        findings are useful signals that still need additional confirmation.
-                                    </p>
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-
-                        st.markdown("### Conclusions")
-                        st.caption("Each conclusion is linked to the findings and source URLs that support it.")
-                        for index, conclusion in enumerate(detail["conclusions"], start=1):
-                            render_conclusion_card(index, conclusion)
-
-                        if detail["contradictions"]:
-                            st.markdown("### Contradictions detected")
-                            st.caption("These source-level disagreements are retained as structured evidence.")
-                            for contradiction in detail["contradictions"]:
-                                render_contradiction_card(contradiction)
-
-                        st.markdown("### Complete findings")
-                        st.caption("Every extracted finding is grouped by the sub-question it answers.")
-                        for group in detail["findings_by_sub_question"]:
-                            with st.expander(
-                                f'{group["sub_question"]}  ·  {len(group["findings"])} findings'
-                            ):
-                                if group["findings"]:
-                                    frame = pd.DataFrame(
-                                        [
-                                            {
-                                                "Claim": finding["claim"],
-                                                "Detail": finding["detail"] or "",
-                                                "Classification": finding["classification"].replace("_", " "),
-                                                "Source": finding["source_url"],
-                                            }
-                                            for finding in group["findings"]
-                                        ]
-                                    )
-                                    st.dataframe(
-                                        frame,
-                                        use_container_width=True,
-                                        hide_index=True,
-                                        column_config={"Source": st.column_config.LinkColumn("Source")},
-                                    )
-                                    st.download_button(
-                                        "Download findings as CSV",
-                                        frame.to_csv(index=False),
-                                        file_name=f"findings_{topic_id}.csv",
-                                        key=f"dl_{group['sub_question'][:20]}_{topic_id}",
-                                    )
-                                else:
-                                    st.caption("No findings were extracted for this sub-question.")
+                        render_executive_summary(detail, analytics)
+                        with st.expander("Open detailed evidence dossier", expanded=False):
+                            render_detailed_dossier(detail, analytics, topic_id)
                     else:
                         st.error("The research run stopped before producing results. See the activity log for details.")
                 break
