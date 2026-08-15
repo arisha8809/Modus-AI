@@ -119,10 +119,25 @@ renamed to a timestamped backup first.
 DATA_DIR=./demo_data uvicorn backend.main:app --reload --port 8000
 ```
 
+On Windows PowerShell, use the equivalent helper and environment-variable syntax:
+
+```powershell
+.\scripts\prepare_demo_data.ps1 .\demo_data
+$env:DATA_DIR = "$PWD\demo_data"
+uvicorn backend.main:app --reload --port 8000
+```
+
 In a second terminal, start the frontend:
 
 ```bash
 BACKEND_URL=http://localhost:8000 streamlit run frontend/app.py
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:BACKEND_URL = "http://localhost:8000"
+streamlit run frontend/app.py
 ```
 
 Use the challenge’s sample question as the primary run:
@@ -185,7 +200,8 @@ Modus-AI/
 │   └── app.py                # Streamlit UI
 ├── data/                      # SQLite + Chroma files (persistent, gitignored)
 ├── scripts/
-│   └── prepare_demo_data.sh   # reversible clean-data setup for recording
+│   ├── prepare_demo_data.sh   # reversible clean-data setup for recording
+│   └── prepare_demo_data.ps1  # Windows PowerShell equivalent
 ├── docs/
 │   ├── architecture.md
 │   ├── model_library_inventory.md
