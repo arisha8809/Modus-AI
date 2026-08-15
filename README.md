@@ -26,8 +26,11 @@ claim-level contradictions side by side, evidence coverage by research theme, so
 provenance type, decision signals for strongest evidence and review areas, and a publication-year
 research horizon when source dates are available, plus a major-events timeline for launches, regulations,
 company moves, market events, breakthroughs, adoption milestones, and risk events explicitly dated in
-retrieved sources. All metrics are calculated from the stored research graph, and undated sources are
-explicitly excluded from the timeline rather than being assigned made-up years.
+retrieved sources. The executive view also includes a **Counterfactual Decision Lab**: a transparent
+posture of *Scale what works*, *Pilot with guardrails*, or *Validate before scaling*, the claims that
+support that posture, and the exact contradiction or coverage gap that would change it. All metrics are
+calculated from the stored research graph, and undated sources are explicitly excluded from the timeline
+rather than being assigned made-up years.
 
 All results persist in a reusable knowledge base — restarting the app does not lose anything,
 and every past research run remains searchable.
@@ -104,6 +107,49 @@ and watch the pipeline run.
 
 ---
 
+## Recording-ready demo runbook
+
+The repository keeps persistent research data under `./data`, but the checked-in repository starts
+with an empty data directory. For a clean recording, do not delete a working knowledge base. Use the
+reversible helper below to create an isolated demo directory; if that directory already exists, it is
+renamed to a timestamped backup first.
+
+```bash
+./scripts/prepare_demo_data.sh ./demo_data
+DATA_DIR=./demo_data uvicorn backend.main:app --reload --port 8000
+```
+
+In a second terminal, start the frontend:
+
+```bash
+BACKEND_URL=http://localhost:8000 streamlit run frontend/app.py
+```
+
+Use the challenge’s sample question as the primary run:
+
+> **How has AI impacted retail operations?**
+
+The fast demo path is to show the completed executive readout first: the headline, evidence KPIs,
+impact map, Decision Lab posture, and compact milestone strip. Then open the detailed dossier only long
+enough to show one contradiction or evidence gap and one source link.
+
+For the Knowledge Base demonstration, run one optional second question after the retail run:
+
+> **What AI technologies are changing manufacturing?**
+
+Then open **Knowledge base**. The page lists both completed investigations and provides semantic search
+across all stored findings. Search for a shared concept such as `demand forecasting` or `predictive
+maintenance` to demonstrate that findings remain reusable across research runs rather than disappearing
+with the original answer. If you want the shortest recording, use only the retail question and show the
+Knowledge Base empty-state behavior before running it, then return to the completed dossier.
+
+The Knowledge Base is not a separate model or a static sample page. It reads completed runs from the
+SQLite store and searches findings indexed in the persistent local Chroma collection. A fresh `DATA_DIR`
+therefore gives the recording a clean starting point without changing any deployed or previously saved
+research data.
+
+---
+
 ## Hosted version
 
 - **Frontend:** _[Streamlit Community Cloud link — added once deployed]_
@@ -138,6 +184,8 @@ Modus-AI/
 ├── frontend/
 │   └── app.py                # Streamlit UI
 ├── data/                      # SQLite + Chroma files (persistent, gitignored)
+├── scripts/
+│   └── prepare_demo_data.sh   # reversible clean-data setup for recording
 ├── docs/
 │   ├── architecture.md
 │   ├── model_library_inventory.md
