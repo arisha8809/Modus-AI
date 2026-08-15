@@ -28,7 +28,7 @@ that kicks off research returns immediately with a topic_id to poll.
 
 from sqlalchemy.orm import Session
 
-from ..db.models import ResearchTopic, SubQuestion, Source, Finding, Conclusion, Contradiction, PipelineEvent
+from ..db.models import ResearchTopic, SubQuestion, Source, Finding, TimelineEvent, Conclusion, Contradiction, PipelineEvent
 from ..db import vector_store
 from .classifier_agent import classify_and_plan
 from .web_tools import search_web
@@ -98,16 +98,18 @@ def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 3):
                 # Isolated per source: a malformed LLM response on one page
                 # shouldn't discard the other 8 sources' worth of work.
                 try:
-                    extracted = extract_findings(sub_q_text, page_text, domain=topic.domain)
+                    extracted_result = extract_findings(sub_q_text, page_text, domain=topic.domain)
                 except Exception as e:
                     _log(db, topic, "error", f"Extraction failed for {r['url']}: {e}. Skipping this source.")
                     continue
 
-                for f in extracted:
+                extracted_findings = extracted_result.get("findings", [])
+                extracted_events = extracted_result.get("timeline_events", [])
+                for finding_data in extracted_findings:
                     finding = Finding(
                         source_id=source.id,
-                        claim=f.get("claim", ""),
-                        detail=f.get("detail", ""),
+                        claim=finding_data.get("claim", ""),
+                        detail=finding_data.get("detail", ""),
                     )
                     db.add(finding)
                     db.commit()
@@ -123,8 +125,26 @@ def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 3):
                     sub_q_findings.append({
                         "id": finding.id, "claim": finding.claim, "source_url": source.url,
                     })
-                if extracted:
-                    _log(db, topic, "extract", f"Extracted {len(extracted)} findings from {r['url']}")
+
+                for event_data in extracted_events:
+                    event_date = str(event_data.get("event_date") or "").strip()
+                    title = str(event_data.get("title") or "").strip()
+                    if event_date and title:
+                        db.add(TimelineEvent(
+                            source_id=source.id,
+                            event_date=event_date[:64],
+                            title=title[:500],
+                            description=str(event_data.get("description") or "")[:2000],
+                            event_type=str(event_data.get("event_type") or "milestone")[:64],
+                            impact_level=str(event_data.get("impact_level") or "medium")[:20],
+                            impact_rationale=str(event_data.get("impact_rationale") or "")[:1000],
+                        ))
+                db.commit()
+
+                if extracted_findings:
+                    _log(db, topic, "extract", f"Extracted {len(extracted_findings)} findings from {r['url']}")
+                if extracted_events:
+                    _log(db, topic, "timeline", f"Captured {len(extracted_events)} dated milestone(s) from {r['url']}")
 
             # --- Stage 5+6+7: Compare evidence, classify, detect contradictions ---
             if sub_q_findings:

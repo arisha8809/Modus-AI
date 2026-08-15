@@ -21,6 +21,7 @@ from ..schemas import (
     TopicStats,
     TopicAnalyticsOut,
     TrendPointOut,
+    TimelineEventOut,
     ConclusionOut,
     ContradictionOut,
     FindingOut,
@@ -162,6 +163,7 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
         }
     )
     sub_question_breakdown = []
+    timeline_events_out = []
 
     for sub_question in topic.sub_questions:
         sub_question_findings = []
@@ -174,6 +176,21 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
             source_type_counts[_source_type(source.url)] += 1
             source_domain_counts[_source_domain(source.url)] += 1
             year = _published_year(source.published_date)
+            for event in source.timeline_events:
+                timeline_events_out.append(
+                    TimelineEventOut(
+                        id=event.id,
+                        event_date=event.event_date,
+                        title=event.title,
+                        description=event.description,
+                        event_type=event.event_type,
+                        impact_level=event.impact_level,
+                        impact_rationale=event.impact_rationale,
+                        source_url=source.url,
+                        source_title=source.title,
+                        source_domain=_source_domain(source.url),
+                    )
+                )
             if year is not None:
                 dated_source_count += 1
                 timeline[year]["source_count"] += 1
@@ -228,10 +245,15 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
         if row["finding_count"] == 0 or row["corroborated_count"] == 0
     ]
 
+    timeline_events_out.sort(
+        key=lambda event: (_published_year(event.event_date) or 9999, event.event_date, event.id)
+    )
+
     analytics = TopicAnalyticsOut(
         dated_source_count=dated_source_count,
         undated_source_count=max(source_count - dated_source_count, 0),
         date_coverage_percent=round((dated_source_count / source_count) * 100, 1) if source_count else 0.0,
+        timeline_event_count=len(timeline_events_out),
         source_type_counts=dict(source_type_counts),
         source_domain_counts=[
             {"domain": domain, "count": count}
@@ -241,6 +263,7 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
             TrendPointOut(year=year, **values)
             for year, values in sorted(timeline.items())
         ],
+        timeline_events=timeline_events_out,
         sub_question_breakdown=sub_question_breakdown,
         decision_signals={
             "strongest_evidence": [row["sub_question"] for row in strongest_topics[:3] if row["finding_count"]],

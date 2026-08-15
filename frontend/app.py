@@ -739,6 +739,132 @@ def inject_base_styles():
 
         .source-meta a { color: var(--blue); word-break: break-word; }
 
+        /* Explicit contrast reset for Streamlit-rendered markdown, captions, tables, and links. */
+        [data-testid="stMarkdownContainer"],
+        [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] li,
+        [data-testid="stMarkdownContainer"] span,
+        [data-testid="stMarkdownContainer"] strong,
+        [data-testid="stCaptionContainer"],
+        [data-testid="stCaptionContainer"] p,
+        [data-testid="stDataFrame"],
+        [data-testid="stDataFrame"] * {
+            color: #0f172a !important;
+        }
+
+        [data-testid="stCaptionContainer"],
+        [data-testid="stCaptionContainer"] p {
+            color: #475569 !important;
+        }
+
+        [data-testid="stMarkdownContainer"] .hero,
+        [data-testid="stMarkdownContainer"] .hero * { color: #ffffff !important; }
+        [data-testid="stMarkdownContainer"] .hero-kicker { color: #bfdbfe !important; }
+        [data-testid="stMarkdownContainer"] .hero-copy { color: #cbd5e1 !important; }
+        [data-testid="stMarkdownContainer"] .hero-tag { color: #dbeafe !important; }
+        .eyebrow { color: var(--blue) !important; }
+        .badge { color: inherit !important; }
+        .badge-corroborated { color: var(--green) !important; }
+        .badge-contested { color: var(--red) !important; }
+        .badge-single_source { color: var(--amber) !important; }
+        .badge-domain { color: #4338ca !important; }
+        .difference-title { color: #312e81 !important; }
+        .difference-copy, .difference-item { color: var(--ink-soft) !important; }
+        .signal-kicker, .signal-detail, .claim-label, .claim-detail, .source-meta { color: var(--muted) !important; }
+        .signal-value, .claim-text, .chart-title { color: var(--ink) !important; }
+
+        .major-timeline {
+            position: relative;
+            margin: 0.85rem 0 1.25rem;
+            padding: 0.45rem 0 0.25rem;
+        }
+
+        .major-timeline::before {
+            content: "";
+            position: absolute;
+            top: 0.8rem;
+            bottom: 0.8rem;
+            left: 17px;
+            width: 2px;
+            background: linear-gradient(180deg, #93c5fd 0%, #c4b5fd 100%);
+        }
+
+        .timeline-item {
+            position: relative;
+            display: grid;
+            grid-template-columns: 36px minmax(0, 1fr);
+            gap: 0.95rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .timeline-marker {
+            position: relative;
+            z-index: 1;
+            width: 35px;
+            height: 35px;
+            display: grid;
+            place-items: center;
+            border: 4px solid #f8fafc;
+            border-radius: 50%;
+            color: #ffffff !important;
+            font-size: 0.58rem;
+            font-weight: 850;
+        }
+
+        .timeline-high { background: #dc2626; box-shadow: 0 0 0 1px #fecaca; }
+        .timeline-medium { background: #d97706; box-shadow: 0 0 0 1px #fde68a; }
+        .timeline-low { background: #2563eb; box-shadow: 0 0 0 1px #bfdbfe; }
+
+        .timeline-card {
+            padding: 0.85rem 0.95rem;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: #ffffff;
+            box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .timeline-meta {
+            color: var(--blue) !important;
+            font-size: 0.67rem;
+            font-weight: 850;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .timeline-title {
+            margin-top: 0.28rem;
+            color: var(--ink) !important;
+            font-size: 0.94rem;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .timeline-description {
+            margin-top: 0.35rem;
+            color: var(--ink-soft) !important;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .timeline-source {
+            margin-top: 0.55rem;
+            color: var(--muted) !important;
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+
+        .timeline-source a { color: var(--blue) !important; word-break: break-word; }
+
+        .timeline-empty {
+            padding: 1rem;
+            border: 1px dashed #cbd5e1;
+            border-radius: 13px;
+            color: var(--ink-soft) !important;
+            background: #f8fafc;
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
         .chart-surface {
             padding: 0.9rem 1rem 0.35rem;
             border: 1px solid var(--line);
@@ -769,6 +895,9 @@ def inject_base_styles():
             .workspace-heading { display: block; }
             .difference-banner { grid-template-columns: 1fr; }
             .signal-grid { grid-template-columns: 1fr; }
+            .timeline-item { grid-template-columns: 30px minmax(0, 1fr); gap: 0.7rem; }
+            .timeline-marker { width: 30px; height: 30px; }
+            .major-timeline::before { left: 14px; }
         }
         </style>
         """,
@@ -1004,7 +1133,7 @@ def render_theme_evidence_chart(analytics: dict):
                 hovertemplate=f"{label}: %{{x}}<extra></extra>",
             )
         )
-    figure.update_layout(**_chart_layout(300), barmode="stack", xaxis=dict(showgrid=False, title="Findings"), yaxis=dict(showgrid=False))
+    figure.update_layout(**_chart_layout(max(300, 78 * len(rows))), barmode="stack", xaxis=dict(showgrid=False, title="Findings", tickfont=dict(color="#334155"), title_font=dict(color="#334155")), yaxis=dict(showgrid=False, tickfont=dict(color="#334155"), title_font=dict(color="#334155")))
     st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1066,11 +1195,53 @@ def render_timeline_chart(analytics: dict):
     )
     figure.update_layout(
         **_chart_layout(300),
-        xaxis=dict(showgrid=False, dtick=1, title="Publication year"),
-        yaxis=dict(showgrid=True, gridcolor="#e2e8f0", title="Evidence volume"),
+        xaxis=dict(showgrid=False, dtick=1, title="Publication year", tickfont=dict(color="#334155"), title_font=dict(color="#334155")),
+        yaxis=dict(showgrid=True, gridcolor="#e2e8f0", title="Evidence volume", tickfont=dict(color="#334155"), title_font=dict(color="#334155")),
     )
     st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
     st.caption(f"Historical view based on publisher dates for {coverage:.0f}% of collected sources; undated sources are excluded.")
+
+
+def render_major_events_timeline(analytics: dict):
+    events = analytics.get("timeline_events", []) if analytics else []
+    if not events:
+        st.markdown(
+            """
+            <div class="timeline-empty">
+                No explicitly dated major events were extracted for this run. The timeline only shows milestones
+                that a source page states with a date or year; it never fills gaps with invented historical events.
+                Try a question that includes market launches, regulation, company moves, or technology adoption.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
+    items = []
+    for event in events:
+        impact = str(event.get("impact_level") or "medium").lower()
+        if impact not in {"high", "medium", "low"}:
+            impact = "medium"
+        event_type = escape(str(event.get("event_type") or "milestone").replace("_", " "))
+        event_date = escape(str(event.get("event_date") or "Date unavailable"))
+        title = escape(str(event.get("title") or "Untitled milestone"))
+        description = escape(str(event.get("description") or ""))
+        rationale = escape(str(event.get("impact_rationale") or ""))
+        source_title = escape(str(event.get("source_title") or event.get("source_domain") or "Source"))
+        source_domain = escape(str(event.get("source_domain") or ""))
+        source_url = event.get("source_url") or ""
+        safe_url = escape(source_url, quote=True)
+        description_html = f'<div class="timeline-description">{description}</div>' if description else ""
+        rationale_html = f'<span>Impact lens: {rationale}</span>' if rationale else ""
+        items.append(
+            f'<div class="timeline-item"><div class="timeline-marker timeline-{impact}">{impact[:1].upper()}</div>'
+            f'<div class="timeline-card"><div class="timeline-meta">{event_date} · {event_type} · {impact} impact</div>'
+            f'<div class="timeline-title">{title}</div>{description_html}'
+            f'<div class="timeline-source"><strong>{source_title}</strong> · {source_domain}<br>'
+            f'{rationale_html}<br><a href="{safe_url}" target="_blank">Open source evidence ↗</a></div>'
+            f'</div></div>'
+        )
+    st.markdown(f"<div class=\"major-timeline\">{''.join(items)}</div>", unsafe_allow_html=True)
 
 
 def _confidence(findings: list[dict]):
@@ -1275,6 +1446,11 @@ with tab_new:
                             st.markdown("#### Source portfolio")
                             st.caption("A transparent view of the source mix behind the dossier.")
                             render_source_portfolio_chart(analytics)
+
+                        event_count = analytics.get("timeline_event_count", 0)
+                        st.markdown(f"#### Major events & market milestones · {event_count}")
+                        st.caption("Dated launches, regulations, company moves, market events, and adoption milestones extracted from the research sources.")
+                        render_major_events_timeline(analytics)
 
                         st.markdown("#### Research horizon")
                         st.caption("Publication-year signals separate current evidence from historical context without inventing dates.")

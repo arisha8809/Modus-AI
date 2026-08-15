@@ -24,9 +24,10 @@ Classify domain & define sub-questions
 The result is an **evidence-first research dossier**, not just a cited paragraph. The dashboard shows
 claim-level contradictions side by side, evidence coverage by research theme, source portfolio by
 provenance type, decision signals for strongest evidence and review areas, and a publication-year
-research horizon when source dates are available. All metrics are calculated from the stored research
-graph, and undated sources are explicitly excluded from the timeline rather than being assigned made-up
-years.
+research horizon when source dates are available, plus a major-events timeline for launches, regulations,
+company moves, market events, breakthroughs, adoption milestones, and risk events explicitly dated in
+retrieved sources. All metrics are calculated from the stored research graph, and undated sources are
+explicitly excluded from the timeline rather than being assigned made-up years.
 
 All results persist in a reusable knowledge base — restarting the app does not lose anything,
 and every past research run remains searchable.

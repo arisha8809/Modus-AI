@@ -82,6 +82,19 @@ class TrendPointOut(BaseModel):
     single_source_count: int
 
 
+class TimelineEventOut(BaseModel):
+    id: int
+    event_date: str
+    title: str
+    description: str | None
+    event_type: str
+    impact_level: str
+    impact_rationale: str | None
+    source_url: str
+    source_title: str | None = None
+    source_domain: str | None = None
+
+
 class TopicAnalyticsOut(BaseModel):
     """Decision-oriented aggregates derived from stored sources and findings.
 
@@ -91,9 +104,11 @@ class TopicAnalyticsOut(BaseModel):
     dated_source_count: int
     undated_source_count: int
     date_coverage_percent: float
+    timeline_event_count: int
     source_type_counts: dict[str, int] = Field(default_factory=dict)
     source_domain_counts: list[dict] = Field(default_factory=list)
     timeline: list[TrendPointOut] = Field(default_factory=list)
+    timeline_events: list[TimelineEventOut] = Field(default_factory=list)
     sub_question_breakdown: list[dict] = Field(default_factory=list)
     decision_signals: dict[str, list[str]] = Field(default_factory=dict)
 

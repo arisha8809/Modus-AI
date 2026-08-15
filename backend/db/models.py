@@ -87,6 +87,30 @@ class Source(Base):
 
     sub_question = relationship("SubQuestion", back_populates="sources")
     findings = relationship("Finding", back_populates="source", cascade="all, delete-orphan")
+    timeline_events = relationship("TimelineEvent", back_populates="source", cascade="all, delete-orphan")
+
+
+class TimelineEvent(Base):
+    """A dated, source-backed milestone extracted from a source page.
+
+    Event dates are only stored when the source text provides an explicit date
+    or year. The impact level is a transparent research judgement for ranking
+    the timeline, not a claim about a measured market return.
+    """
+
+    __tablename__ = "timeline_events"
+
+    id = Column(Integer, primary_key=True)
+    source_id = Column(Integer, ForeignKey("sources.id"), nullable=False)
+    event_date = Column(String(64), nullable=False)
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    event_type = Column(String(64), default="milestone")
+    impact_level = Column(String(20), default="medium")
+    impact_rationale = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    source = relationship("Source", back_populates="timeline_events")
 
 
 class Finding(Base):
