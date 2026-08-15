@@ -58,13 +58,35 @@ class ContradictionOut(BaseModel):
         from_attributes = True
 
 
+class TopicStats(BaseModel):
+    """Aggregate counts for the topic -- what makes results demonstrable as
+    structured data (numbers, breakdowns) rather than a paragraph summary."""
+    sub_question_count: int
+    source_count: int
+    finding_count: int
+    corroborated_count: int
+    contested_count: int
+    single_source_count: int
+    contradiction_count: int
+    conclusion_count: int
+
+
+class SubQuestionFindingsOut(BaseModel):
+    """All findings for one sub-question -- used to show the full findings
+    table, not just the subset that ended up cited in a conclusion."""
+    sub_question: str
+    findings: list[FindingOut]
+
+
 class TopicDetail(BaseModel):
     id: int
     question: str
     domain: str | None
     status: str
+    stats: TopicStats
     conclusions: list[ConclusionOut]
     contradictions: list[ContradictionOut]
+    findings_by_sub_question: list[SubQuestionFindingsOut]
     events: list[PipelineEventOut]
 
     class Config:

@@ -11,8 +11,8 @@ from ..db.models import ResearchTopic
 from ..db import vector_store
 from ..agents.orchestrator import run_pipeline
 from ..schemas import (
-    NewResearchRequest, TopicSummary, TopicDetail,
-    ConclusionOut, ContradictionOut, FindingOut, PipelineEventOut,
+    NewResearchRequest, TopicSummary, TopicDetail, TopicStats,
+    ConclusionOut, ContradictionOut, FindingOut, PipelineEventOut, SubQuestionFindingsOut,
 )
 
 router = APIRouter()
@@ -88,9 +88,39 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
         PipelineEventOut(stage=e.stage, message=e.message, created_at=e.created_at)
         for e in sorted(topic.pipeline_events, key=lambda e: e.created_at)
     ]
+
+    # Full findings breakdown, grouped by sub-question -- this is the data
+    # that makes the UI a research dossier rather than a chat summary: every
+    # finding the pipeline extracted, not just the subset a conclusion cited.
+    findings_by_sub_question = []
+    all_findings = []
+    source_count = 0
+    for sq in topic.sub_questions:
+        sq_findings = []
+        for src in sq.sources:
+            source_count += 1
+            for f in src.findings:
+                sq_findings.append(_finding_out(f))
+                all_findings.append(f)
+        findings_by_sub_question.append(
+            SubQuestionFindingsOut(sub_question=sq.text, findings=sq_findings)
+        )
+
+    stats = TopicStats(
+        sub_question_count=len(topic.sub_questions),
+        source_count=source_count,
+        finding_count=len(all_findings),
+        corroborated_count=sum(1 for f in all_findings if f.classification == "corroborated"),
+        contested_count=sum(1 for f in all_findings if f.classification == "contested"),
+        single_source_count=sum(1 for f in all_findings if f.classification == "single_source"),
+        contradiction_count=len(topic.contradictions),
+        conclusion_count=len(topic.conclusions),
+    )
+
     return TopicDetail(
         id=topic.id, question=topic.question, domain=topic.domain, status=topic.status,
-        conclusions=conclusions_out, contradictions=contradictions_out, events=events_out,
+        stats=stats, conclusions=conclusions_out, contradictions=contradictions_out,
+        findings_by_sub_question=findings_by_sub_question, events=events_out,
     )
 
 
