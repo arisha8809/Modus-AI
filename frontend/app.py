@@ -788,6 +788,120 @@ def inject_base_styles():
             line-height: 1.3;
         }
 
+        .decision-lab {
+            margin: 1rem 0 1.2rem;
+            padding: 1.1rem 1.15rem;
+            border: 1px solid #c4b5fd;
+            border-radius: 17px;
+            background: linear-gradient(115deg, #f5f3ff 0%, #ffffff 70%);
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);
+        }
+
+        .decision-lab-kicker {
+            color: #6d28d9 !important;
+            font-size: 0.66rem;
+            font-weight: 850;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .decision-lab-title {
+            margin-top: 0.28rem;
+            color: #0f172a !important;
+            font-size: 1.05rem;
+            font-weight: 830;
+        }
+
+        .decision-lab-note {
+            margin-top: 0.25rem;
+            color: #475569 !important;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .decision-lab-grid {
+            display: grid;
+            grid-template-columns: 0.82fr 1.18fr 1fr;
+            gap: 0.7rem;
+            margin-top: 0.8rem;
+        }
+
+        .decision-lab-card {
+            min-height: 118px;
+            padding: 0.85rem 0.9rem;
+            border: 1px solid #ddd6fe;
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.88);
+        }
+
+        .decision-lab-label {
+            color: #64748b !important;
+            font-size: 0.63rem;
+            font-weight: 850;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .decision-posture {
+            display: inline-flex;
+            margin-top: 0.45rem;
+            padding: 0.34rem 0.58rem;
+            border-radius: 999px;
+            color: #ffffff !important;
+            background: #6d28d9;
+            font-size: 0.72rem;
+            font-weight: 850;
+        }
+
+        .decision-lab-value {
+            margin-top: 0.45rem;
+            color: #0f172a !important;
+            font-size: 0.84rem;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .decision-lab-copy {
+            margin-top: 0.35rem;
+            color: #475569 !important;
+            font-size: 0.72rem;
+            line-height: 1.42;
+        }
+
+        .decision-evidence-list {
+            display: grid;
+            gap: 0.38rem;
+            margin-top: 0.55rem;
+        }
+
+        .decision-evidence-item {
+            display: flex;
+            gap: 0.42rem;
+            align-items: flex-start;
+            color: #334155 !important;
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
+
+        .decision-evidence-check {
+            flex: 0 0 auto;
+            color: #16a34a !important;
+            font-weight: 900;
+        }
+
+        .decision-evidence-item a {
+            color: #2563eb !important;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .decision-lab-footnote {
+            margin-top: 0.75rem;
+            color: #64748b !important;
+            font-size: 0.65rem;
+            font-style: italic;
+        }
+
         .exec-insight-copy {
             margin-top: 0.28rem;
             color: #475569 !important;
@@ -1075,6 +1189,7 @@ def inject_base_styles():
             .hero { padding: 1.55rem 1.25rem; border-radius: 18px; }
             .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .exec-kpi-row, .exec-insight-grid { grid-template-columns: 1fr 1fr; }
+            .decision-lab-grid { grid-template-columns: 1fr; }
             .exec-event-strip { grid-template-columns: 1fr 1fr; }
             .workspace-heading { display: block; }
             .difference-banner { grid-template-columns: 1fr; }
@@ -1446,6 +1561,72 @@ def _headline_conclusion(conclusions: list[dict]) -> dict:
     return max(conclusions, key=score)
 
 
+def _decision_posture(stats: dict, analytics: dict):
+    findings = stats.get("finding_count", 0)
+    corroborated = stats.get("corroborated_count", 0)
+    support_rate = round((corroborated / findings) * 100) if findings else 0
+    conflicts = stats.get("contradiction_count", 0)
+    gaps = (analytics or {}).get("decision_signals", {}).get("coverage_gaps", [])
+
+    if support_rate >= 65 and conflicts == 0 and not gaps:
+        return "Scale what works", "Evidence is strong enough to move from observation toward execution.", "scale"
+    if support_rate >= 35 and conflicts <= 1:
+        return "Pilot with guardrails", "The signal is promising, but gaps or single-source claims still need monitoring.", "pilot"
+    return "Validate before scaling", "Evidence is too thin or disputed to justify a confident operating move.", "validate"
+
+
+def render_decision_lab(detail: dict, analytics: dict):
+    stats = detail.get("stats", {})
+    posture, posture_copy, posture_kind = _decision_posture(stats, analytics)
+    headline = _headline_conclusion(detail.get("conclusions", []))
+    headline_findings = headline.get("findings", []) or []
+    support_findings = [finding for finding in headline_findings if finding.get("classification") == "corroborated"]
+    support_findings = (support_findings or headline_findings)[:3]
+    contradictions = detail.get("contradictions", []) or []
+    gaps = (analytics or {}).get("decision_signals", {}).get("coverage_gaps", [])
+
+    if contradictions:
+        contradiction = contradictions[0]
+        finding_a = _clip(contradiction.get("finding_a", {}).get("claim", "Source A"), 82)
+        finding_b = _clip(contradiction.get("finding_b", {}).get("claim", "Source B"), 82)
+        flip_condition = f"Resolve the conflict between “{finding_a}” and “{finding_b}”."
+    elif gaps:
+        flip_condition = f"Close the evidence gap on {_clip(gaps[0], 120)}."
+    else:
+        flip_condition = "A new high-quality source that reverses the current evidence classification."
+
+    evidence_items = []
+    for finding in support_findings:
+        claim = escape(_clip(finding.get("claim", ""), 125))
+        source_url = finding.get("source_url") or ""
+        safe_url = escape(source_url, quote=True)
+        evidence_items.append(
+            f'<div class="decision-evidence-item"><span class="decision-evidence-check">✓</span><span>{claim}'
+            f'<br><a href="{safe_url}" target="_blank">View supporting source ↗</a></span></div>'
+        )
+    if not evidence_items:
+        evidence_items.append('<div class="decision-evidence-item"><span class="decision-evidence-check">—</span><span>No corroborated finding is attached to the headline yet.</span></div>')
+
+    title = escape(_clip(headline.get("text"), 145))
+    posture_color = {"scale": "#15803d", "pilot": "#a16207", "validate": "#b91c1c"}[posture_kind]
+    html = (
+        f'<div class="decision-lab"><div class="decision-lab-kicker">Flagship capability · Counterfactual Decision Lab</div>'
+        f'<div class="decision-lab-title">If leadership had to act today, what should happen?</div>'
+        f'<div class="decision-lab-note">Modus separates the current recommendation from the evidence that supports it and the signal that would make us change our mind.</div>'
+        f'<div class="decision-lab-grid">'
+        f'<div class="decision-lab-card"><div class="decision-lab-label">Decision posture</div>'
+        f'<div class="decision-posture" style="background:{posture_color};">{escape(posture)}</div>'
+        f'<div class="decision-lab-copy">{escape(posture_copy)}</div></div>'
+        f'<div class="decision-lab-card"><div class="decision-lab-label">What the evidence supports</div>'
+        f'<div class="decision-lab-value">{title}</div><div class="decision-evidence-list">{"".join(evidence_items)}</div></div>'
+        f'<div class="decision-lab-card"><div class="decision-lab-label">What would change the decision?</div>'
+        f'<div class="decision-lab-value">{escape(flip_condition)}</div>'
+        f'<div class="decision-lab-copy">This condition is derived from the stored conflicts and coverage gaps—not invented as generic advice.</div></div>'
+        f'</div><div class="decision-lab-footnote">Decision posture is a transparent evidence heuristic, not a financial, legal, or operational recommendation.</div></div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
+
+
 def render_compact_event_strip(analytics: dict, limit: int = 5):
     events = (analytics or {}).get("timeline_events", [])[:limit]
     if not events:
@@ -1522,6 +1703,7 @@ def render_executive_summary(detail: dict, analytics: dict):
         for label, title, copy in insight_cards
     )
     st.markdown(f'<div class="exec-insight-grid">{insight_html}</div>', unsafe_allow_html=True)
+    render_decision_lab(detail, analytics)
 
     st.markdown('<div class="exec-section-title">Impact map</div><div class="exec-section-note">Two visuals answer “where is the impact?” and “what is the evidence made of?”</div>', unsafe_allow_html=True)
     chart_col, source_col = st.columns([1.28, 0.72], gap="large")
