@@ -1,0 +1,38 @@
+flowchart LR
+    U[Evaluator / Decision Maker]
+    UI[Streamlit Research Dashboard]
+    API[FastAPI Backend]
+    O[Pipeline Orchestrator]
+    C[Classifier Agent]
+    S[Tavily Search]
+    E[Extraction Agent]
+    V[Evidence Agent]
+    Y[Synthesis Agent]
+    DB[(SQLite Knowledge Base)]
+    CH[(Chroma Semantic Index)]
+    LLM[Groq Llama 3.3 70B]
+    SRC[Source Web Pages]
+
+    U --> UI
+    UI -->|POST /research| API
+    UI -->|poll research id| API
+    UI -->|search findings| API
+    API --> O
+    O --> C
+    C --> LLM
+    C -->|domain + sub-questions| O
+    O --> S
+    S --> SRC
+    SRC -->|source pages + metadata| O
+    O --> E
+    E --> LLM
+    O --> V
+    V --> LLM
+    O --> Y
+    Y --> LLM
+    O -->|topics, sources, findings, events, contradictions, conclusions, pipeline events| DB
+    O -->|finding embeddings| CH
+    API --> DB
+    API --> CH
+    DB --> UI
+    CH --> UI

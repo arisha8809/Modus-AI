@@ -57,7 +57,7 @@ and every past research run remains searchable.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Full detail, including why each choice was made, is in [`docs/architecture.md`](docs/architecture.md).
+Full detail, including why each choice was made, is in [`docs/architecture.md`](docs/architecture.md). The submission-ready architecture diagram is available as [`PNG`](docs/architecture_diagram.png) with its editable [`Mermaid source`](docs/architecture_diagram.mmd).
 
 ### Why this satisfies the challenge's "not accepted" list
 
@@ -212,10 +212,14 @@ Modus-AI/
 └── README.md
 ```
 
+## API documentation
+
+The endpoint summary is in [`docs/api.md`](docs/api.md). When the backend is running, FastAPI also exposes interactive Swagger documentation at `/docs` and the raw OpenAPI schema at `/openapi.json`.
+
 ## Models & libraries used
 
 See [`docs/model_library_inventory.md`](docs/model_library_inventory.md) for the full list with
-licences, as required by the challenge deliverables.
+licences, as required by the challenge deliverables. The database/data-model submission artifact is [`docs/data_model.png`](docs/data_model.png), with editable [`Mermaid source`](docs/data_model.mmd) and the implementation in [`backend/db/models.py`](backend/db/models.py).
 
 ## What was built vs. AI-assisted
 

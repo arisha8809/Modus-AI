@@ -1,0 +1,67 @@
+erDiagram
+    RESEARCH_TOPICS ||--o{ SUB_QUESTIONS : contains
+    RESEARCH_TOPICS ||--o{ CONCLUSIONS : produces
+    RESEARCH_TOPICS ||--o{ CONTRADICTIONS : records
+    RESEARCH_TOPICS ||--o{ PIPELINE_EVENTS : logs
+    SUB_QUESTIONS ||--o{ SOURCES : gathers
+    SOURCES ||--o{ FINDINGS : yields
+    SOURCES ||--o{ TIMELINE_EVENTS : supports
+    FINDINGS }o--o{ CONCLUSIONS : supports
+    FINDINGS ||--o{ CONTRADICTIONS : finding_a
+    FINDINGS ||--o{ CONTRADICTIONS : finding_b
+
+    RESEARCH_TOPICS {
+        int id PK
+        text question
+        string domain
+        string status
+        datetime created_at
+    }
+    SUB_QUESTIONS {
+        int id PK
+        int topic_id FK
+        text text
+    }
+    SOURCES {
+        int id PK
+        int sub_question_id FK
+        text url
+        text title
+        text raw_text
+        string published_date
+    }
+    FINDINGS {
+        int id PK
+        int source_id FK
+        text claim
+        text detail
+        string classification
+        float confidence
+    }
+    TIMELINE_EVENTS {
+        int id PK
+        int source_id FK
+        string event_date
+        text title
+        string event_type
+        string impact_level
+    }
+    CONCLUSIONS {
+        int id PK
+        int topic_id FK
+        text text
+    }
+    CONTRADICTIONS {
+        int id PK
+        int topic_id FK
+        int finding_id_a FK
+        int finding_id_b FK
+        text explanation
+    }
+    PIPELINE_EVENTS {
+        int id PK
+        int topic_id FK
+        string stage
+        text message
+        datetime created_at
+    }
