@@ -10,9 +10,19 @@ from ..db.session import get_session
 from ..db.models import ResearchTopic
 from ..db import vector_store
 from ..agents.orchestrator import run_pipeline
-from ..schemas import NewResearchRequest, TopicSummary, TopicDetail, ConclusionOut, FindingOut, PipelineEventOut
+from ..schemas import (
+    NewResearchRequest, TopicSummary, TopicDetail,
+    ConclusionOut, ContradictionOut, FindingOut, PipelineEventOut,
+)
 
 router = APIRouter()
+
+
+def _finding_out(f):
+    return FindingOut(
+        id=f.id, claim=f.claim, detail=f.detail,
+        classification=f.classification, source_url=f.source.url,
+    )
 
 
 def _run_pipeline_in_background(topic_id: int):
@@ -61,15 +71,18 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
         ConclusionOut(
             id=c.id,
             text=c.text,
-            findings=[
-                FindingOut(
-                    id=f.id, claim=f.claim, detail=f.detail,
-                    classification=f.classification, source_url=f.source.url,
-                )
-                for f in c.findings
-            ],
+            findings=[_finding_out(f) for f in c.findings],
         )
         for c in topic.conclusions
+    ]
+    contradictions_out = [
+        ContradictionOut(
+            id=c.id,
+            explanation=c.explanation,
+            finding_a=_finding_out(c.finding_a),
+            finding_b=_finding_out(c.finding_b),
+        )
+        for c in topic.contradictions
     ]
     events_out = [
         PipelineEventOut(stage=e.stage, message=e.message, created_at=e.created_at)
@@ -77,7 +90,7 @@ def get_research(topic_id: int, db: Session = Depends(get_session)):
     ]
     return TopicDetail(
         id=topic.id, question=topic.question, domain=topic.domain, status=topic.status,
-        conclusions=conclusions_out, events=events_out,
+        conclusions=conclusions_out, contradictions=contradictions_out, events=events_out,
     )
 
 

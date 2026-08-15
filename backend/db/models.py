@@ -38,15 +38,6 @@ conclusion_findings = Table(
     Column("finding_id", Integer, ForeignKey("findings.id"), primary_key=True),
 )
 
-# Many-to-many: contradictions link two findings to each other.
-finding_contradictions = Table(
-    "finding_contradictions",
-    Base.metadata,
-    Column("finding_id_a", Integer, ForeignKey("findings.id"), primary_key=True),
-    Column("finding_id_b", Integer, ForeignKey("findings.id"), primary_key=True),
-    Column("explanation", Text, nullable=True),
-)
-
 
 class ResearchTopic(Base):
     """A research question submitted to the agent, e.g.
@@ -63,6 +54,7 @@ class ResearchTopic(Base):
 
     sub_questions = relationship("SubQuestion", back_populates="topic", cascade="all, delete-orphan")
     conclusions = relationship("Conclusion", back_populates="topic", cascade="all, delete-orphan")
+    contradictions = relationship("Contradiction", back_populates="topic", cascade="all, delete-orphan")
     pipeline_events = relationship("PipelineEvent", back_populates="topic", cascade="all, delete-orphan")
 
 
@@ -130,6 +122,26 @@ class Conclusion(Base):
     findings = relationship(
         "Finding", secondary=conclusion_findings, back_populates="conclusions"
     )
+
+
+class Contradiction(Base):
+    """A detected disagreement between two Findings from different sources,
+    as identified by the Evidence agent. Stored as a real row (not just a
+    log line) so contradictions are queryable and traceable data, not
+    prose buried in a pipeline event log."""
+
+    __tablename__ = "contradictions"
+
+    id = Column(Integer, primary_key=True)
+    topic_id = Column(Integer, ForeignKey("research_topics.id"), nullable=False)
+    finding_id_a = Column(Integer, ForeignKey("findings.id"), nullable=False)
+    finding_id_b = Column(Integer, ForeignKey("findings.id"), nullable=False)
+    explanation = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    topic = relationship("ResearchTopic", back_populates="contradictions")
+    finding_a = relationship("Finding", foreign_keys=[finding_id_a])
+    finding_b = relationship("Finding", foreign_keys=[finding_id_b])
 
 
 class PipelineEvent(Base):

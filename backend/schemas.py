@@ -48,12 +48,23 @@ class ConclusionOut(BaseModel):
         from_attributes = True
 
 
+class ContradictionOut(BaseModel):
+    id: int
+    explanation: str | None
+    finding_a: FindingOut
+    finding_b: FindingOut
+
+    class Config:
+        from_attributes = True
+
+
 class TopicDetail(BaseModel):
     id: int
     question: str
     domain: str | None
     status: str
     conclusions: list[ConclusionOut]
+    contradictions: list[ContradictionOut]
     events: list[PipelineEventOut]
 
     class Config:

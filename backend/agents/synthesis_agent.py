@@ -11,15 +11,17 @@ rather than being a plausible-sounding LLM summary.
 
 from .llm_client import chat_json
 
-SYSTEM_PROMPT = """You are a research synthesis agent. You are given the \
-original research question and a list of findings (each with an id, its \
-evidence classification, and the claim text) gathered from web research.
+SYSTEM_PROMPT = """You are a research synthesis agent working on the {domain} \
+industry. You are given the original research question and a list of \
+findings (each with an id, its evidence classification, and the claim text) \
+gathered from web research.
 
 Write 3 to 6 clear, SPECIFIC conclusions that answer the research question, \
 using ONLY the findings provided -- do not introduce outside knowledge. \
 Prefer findings classified "corroborated" as stronger evidence; note where a \
 conclusion rests on a "contested" or "single_source" finding so the reader \
-knows the confidence level.
+knows the confidence level. Frame conclusions in terms that would make sense \
+to a {domain} business stakeholder, not generic AI-hype language.
 
 Strict rules:
 - Each conclusion must be about ONE specific theme (e.g. inventory \
@@ -36,15 +38,15 @@ Strict rules:
   a finding seems to support several conclusions, pick the single best fit.
 
 Return JSON in exactly this shape:
-{
+{{
   "conclusions": [
-    {"text": "<specific conclusion statement>", "supporting_finding_ids": [<id>, <id>, ...]}
+    {{"text": "<specific conclusion statement>", "supporting_finding_ids": [<id>, <id>, ...]}}
   ]
-}
+}}
 """
 
 
-def synthesize(research_question: str, findings: list[dict]) -> list[dict]:
+def synthesize(research_question: str, findings: list[dict], domain: str = "general") -> list[dict]:
     """`findings` is a list of {id, claim, classification} dicts."""
     if not findings:
         return []
@@ -53,7 +55,7 @@ def synthesize(research_question: str, findings: list[dict]) -> list[dict]:
         for f in findings
     )
     result = chat_json(
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=SYSTEM_PROMPT.format(domain=domain or "general"),
         user_prompt=f"Research question: {research_question}\n\nFindings:\n{listing}",
     )
     conclusions = result.get("conclusions", [])

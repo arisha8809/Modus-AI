@@ -75,6 +75,16 @@ with tab_new:
                             with st.expander(f"Evidence ({len(c['findings'])} finding(s))"):
                                 for f in c["findings"]:
                                     st.write(f"- *{f['claim']}* — `{f['classification']}` — [{f['source_url']}]({f['source_url']})")
+
+                        if detail["contradictions"]:
+                            st.markdown("### ⚠️ Contradictions detected")
+                            st.caption("Sources that disagree with each other — surfaced explicitly, not just logged.")
+                            for c in detail["contradictions"]:
+                                st.warning(
+                                    f"**{c['explanation']}**\n\n"
+                                    f"- *{c['finding_a']['claim']}* — [{c['finding_a']['source_url']}]({c['finding_a']['source_url']})\n"
+                                    f"- *{c['finding_b']['claim']}* — [{c['finding_b']['source_url']}]({c['finding_b']['source_url']})"
+                                )
                 else:
                     st.error("Pipeline failed. Check the event log above for the error.")
                 break
