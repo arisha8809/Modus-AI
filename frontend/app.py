@@ -1,21 +1,16 @@
-"""
-Enterprise AI Research Agent -- Streamlit UI.
+"""Modus AI — Enterprise Research Intelligence dashboard.
 
-Design intent: this tool produces evidence, not chat replies. The UI is built
-as a research dossier / intelligence dashboard -- numbered pipeline stages,
-confidence-scored conclusions backed by data tables, classification charts --
-deliberately not a chat-style scrolling summary. That distinction is the
-actual point of the underlying assignment brief.
-
-Talks to the FastAPI backend over HTTP (set BACKEND_URL in .env or Streamlit
-secrets when deployed).
+The UI is intentionally evidence-first rather than chat-first. It gives users a
+clear research workspace, live pipeline visibility, structured findings, and
+traceable conclusions backed by source URLs.
 """
 
 import os
 import time
-import requests
+
 import pandas as pd
 import plotly.graph_objects as go
+import requests
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -23,175 +18,705 @@ load_dotenv()
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
-st.set_page_config(page_title="Enterprise AI Research Agent", layout="wide")
+st.set_page_config(
+    page_title="Modus AI · Research Intelligence",
+    page_icon="AI",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 
-def api_get(path: str, params: dict | None = None):
-    """GET wrapper that fails with a clear message instead of an unhandled
-    traceback when the backend isn't reachable (e.g. it isn't running, or
-    crashed) -- this is exactly the failure mode that previously surfaced as
-    a raw ConnectionError stack trace in the UI."""
+# --------------------------------------------------------------------------- API
+
+def api_get(path: str, params: dict | None = None, stop_on_error: bool = True):
+    """GET wrapper with an optional non-blocking mode for secondary tabs."""
     try:
-        r = requests.get(f"{BACKEND_URL}{path}", params=params, timeout=10)
-        r.raise_for_status()
-        return r.json()
+        response = requests.get(f"{BACKEND_URL}{path}", params=params, timeout=10)
+        response.raise_for_status()
+        return response.json()
     except requests.exceptions.ConnectionError:
-        st.error(
-            f"Cannot reach the backend at {BACKEND_URL}. "
-            f"Make sure it's running (`uvicorn backend.main:app --reload --port 8000`) and try again."
-        )
-        st.stop()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Backend request failed: {e}")
-        st.stop()
+        if stop_on_error:
+            st.error(
+                f"The research engine is unavailable at {BACKEND_URL}. "
+                "Start the FastAPI service and try again."
+            )
+            st.stop()
+        return None
+    except requests.exceptions.RequestException as exc:
+        if stop_on_error:
+            st.error(f"The backend request failed: {exc}")
+            st.stop()
+        return None
 
 
 def api_post(path: str, json: dict):
+    """POST wrapper with a clear, user-facing failure state."""
     try:
-        r = requests.post(f"{BACKEND_URL}{path}", json=json, timeout=10)
-        r.raise_for_status()
-        return r.json()
+        response = requests.post(f"{BACKEND_URL}{path}", json=json, timeout=10)
+        response.raise_for_status()
+        return response.json()
     except requests.exceptions.ConnectionError:
         st.error(
-            f"Cannot reach the backend at {BACKEND_URL}. "
-            f"Make sure it's running (`uvicorn backend.main:app --reload --port 8000`) and try again."
+            f"The research engine is unavailable at {BACKEND_URL}. "
+            "Start the FastAPI service and try again."
         )
         st.stop()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Backend request failed: {e}")
+    except requests.exceptions.RequestException as exc:
+        st.error(f"The backend request failed: {exc}")
         st.stop()
 
 
-# --------------------------------------------------------------------------- design tokens / CSS
+# --------------------------------------------------------------------------- visual system
+
 def inject_base_styles():
+    """Inject only CSS in this markdown block.
+
+    Keeping CSS separate from other HTML prevents Streamlit's markdown renderer
+    from displaying the stylesheet as visible page text.
+    """
     st.markdown(
         """
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
         <style>
         :root {
-            --ink: #14181F;
-            --paper: #F5F6F4;
-            --panel: #FFFFFF;
-            --border: #DFE2DF;
-            --muted: #6B7280;
-            --accent: #1F4B4C;
-            --accent-light: #E6EDEC;
-            --corroborated: #2F6E4F;
-            --corroborated-bg: #EAF3EC;
-            --contested: #A13D3D;
-            --contested-bg: #F7EAE9;
-            --single: #8A6B2A;
-            --single-bg: #F5EFE0;
+            --ink: #0f172a;
+            --ink-soft: #334155;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --paper: #f6f8fc;
+            --panel: #ffffff;
+            --blue: #2563eb;
+            --blue-dark: #1d4ed8;
+            --blue-soft: #eff6ff;
+            --violet: #7c3aed;
+            --green: #15803d;
+            --green-soft: #ecfdf3;
+            --amber: #a16207;
+            --amber-soft: #fffbeb;
+            --red: #b91c1c;
+            --red-soft: #fef2f2;
+            --shadow: 0 14px 40px rgba(15, 23, 42, 0.07);
         }
 
-        html, body, [class*="css"]  { font-family: 'IBM Plex Sans', sans-serif; color: var(--ink); }
-        .stApp { background-color: var(--paper); }
+        html, body, [class*="css"] {
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", sans-serif;
+            color: var(--ink);
+        }
 
-        h1, h2, h3 { font-family: 'Source Serif 4', serif !important; font-weight: 600 !important; color: var(--ink) !important; }
+        .stApp {
+            background:
+                radial-gradient(circle at 92% 0%, rgba(37, 99, 235, 0.08), transparent 26rem),
+                linear-gradient(180deg, #fbfcff 0%, var(--paper) 48%, #f8fafc 100%);
+        }
 
-        .app-header { border-bottom: 1px solid var(--border); padding-bottom: 1.1rem; margin-bottom: 1.6rem; }
-        .app-title { font-family: 'Source Serif 4', serif; font-size: 2.0rem; font-weight: 700; margin: 0; color: var(--ink); }
-        .app-subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--muted); margin-top: 4px; letter-spacing: 0.02em; }
+        [data-testid="stHeader"] {
+            background: transparent;
+        }
 
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace;
-                 font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
-        .badge-corroborated { background: var(--corroborated-bg); color: var(--corroborated); border: 1px solid var(--corroborated); }
-        .badge-contested { background: var(--contested-bg); color: var(--contested); border: 1px solid var(--contested); }
-        .badge-single_source { background: var(--single-bg); color: var(--single); border: 1px solid var(--single); }
-        .badge-domain { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); }
+        [data-testid="stToolbar"] {
+            right: 1rem;
+        }
 
-        .metric-row { display: flex; gap: 12px; margin: 0.6rem 0 1.6rem 0; flex-wrap: wrap; }
-        .metric-card { flex: 1; min-width: 130px; background: var(--panel); border: 1px solid var(--border);
-                        border-radius: 4px; padding: 14px 16px; }
-        .metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.6rem; font-weight: 600; color: var(--ink); line-height: 1; }
-        .metric-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+        .block-container {
+            max-width: 1420px;
+            padding-top: 2.6rem;
+            padding-bottom: 4rem;
+        }
 
-        .stepper-wrap { position: relative; padding: 0.6rem 2% 0.2rem 2%; margin-bottom: 0.6rem; }
-        .stepper { display: flex; justify-content: space-between; position: relative; z-index: 2; }
-        .step { flex: 1; text-align: center; }
-        .step-circle { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                        margin: 0 auto 8px auto; font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.85rem;
-                        border: 2px solid var(--border); background: var(--panel); color: var(--muted); }
-        .step.done .step-circle { background: var(--accent); border-color: var(--accent); color: #fff; }
-        .step.active .step-circle { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
-        .step-label { font-size: 0.76rem; color: var(--ink); font-weight: 500; }
-        .step-sub { font-size: 0.68rem; color: var(--muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; min-height: 14px; }
-        .stepper-line-base { position: absolute; top: 33px; left: 7%; right: 7%; height: 2px; background: var(--border); z-index: 1; }
-        .stepper-line-progress { position: absolute; top: 33px; left: 7%; height: 2px; background: var(--accent); z-index: 1; transition: width 0.3s ease; }
+        h1, h2, h3, h4 {
+            color: var(--ink) !important;
+            letter-spacing: -0.025em;
+        }
 
-        .concl-index { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-size: 0.8rem; font-weight: 600; }
-        .concl-text { font-size: 1.02rem; font-weight: 500; margin: 4px 0 10px 0; line-height: 1.45; }
+        h2 { margin-top: 0.35rem !important; }
+        h3 { margin-top: 1.35rem !important; }
 
-        div[data-testid="stExpander"] { border: 1px solid var(--border); border-radius: 4px; background: var(--panel); }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.23);
+            font-weight: 800;
+            font-size: 0.82rem;
+            letter-spacing: -0.04em;
+        }
+
+        .brand-name {
+            color: var(--ink);
+            font-size: 0.92rem;
+            font-weight: 750;
+            letter-spacing: 0.03em;
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 0.72rem;
+            margin-top: 1px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.75rem;
+            border: 1px solid #dbeafe;
+            border-radius: 999px;
+            background: rgba(239, 246, 255, 0.85);
+            color: #1d4ed8;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.13);
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 2.15rem 2.25rem;
+            border-radius: 24px;
+            color: #ffffff;
+            background:
+                radial-gradient(circle at 84% 12%, rgba(129, 140, 248, 0.45), transparent 21rem),
+                radial-gradient(circle at 9% 110%, rgba(14, 165, 233, 0.28), transparent 20rem),
+                linear-gradient(125deg, #0f172a 0%, #172554 58%, #312e81 100%);
+            box-shadow: 0 24px 60px rgba(30, 41, 59, 0.22);
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            right: -80px;
+            bottom: -125px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 50%;
+            box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.03),
+                        0 0 0 58px rgba(255, 255, 255, 0.025);
+        }
+
+        .hero-kicker {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0.7rem;
+            color: #bfdbfe;
+            font-size: 0.73rem;
+            font-weight: 750;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            position: relative;
+            z-index: 1;
+            max-width: 750px;
+            margin: 0;
+            color: #ffffff !important;
+            font-size: clamp(2rem, 4vw, 3.35rem);
+            font-weight: 780;
+            line-height: 1.04;
+            letter-spacing: -0.055em;
+        }
+
+        .hero-copy {
+            position: relative;
+            z-index: 1;
+            max-width: 690px;
+            margin: 1rem 0 0;
+            color: #cbd5e1;
+            font-size: 1rem;
+            line-height: 1.65;
+        }
+
+        .hero-tags {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 1.35rem;
+        }
+
+        .hero-tag {
+            padding: 0.42rem 0.68rem;
+            border: 1px solid rgba(191, 219, 254, 0.23);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #dbeafe;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .workspace-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 2.1rem 0 0.9rem;
+        }
+
+        .eyebrow {
+            margin-bottom: 0.32rem;
+            color: var(--blue);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: 1.55rem;
+            font-weight: 760;
+            letter-spacing: -0.04em;
+        }
+
+        .section-note {
+            max-width: 540px;
+            margin: 0.45rem 0 0;
+            color: var(--muted);
+            font-size: 0.91rem;
+            line-height: 1.55;
+        }
+
+        .surface {
+            padding: 1.3rem 1.35rem;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.82);
+            box-shadow: var(--shadow);
+        }
+
+        .surface-title {
+            margin: 0 0 0.25rem;
+            color: var(--ink);
+            font-size: 0.98rem;
+            font-weight: 750;
+        }
+
+        .surface-copy {
+            margin: 0 0 0.9rem;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .workflow-list {
+            display: grid;
+            gap: 0.7rem;
+            margin-top: 0.85rem;
+        }
+
+        .workflow-item {
+            display: flex;
+            align-items: center;
+            gap: 0.72rem;
+            color: var(--ink-soft);
+            font-size: 0.82rem;
+        }
+
+        .workflow-number {
+            display: grid;
+            flex: 0 0 auto;
+            width: 27px;
+            height: 27px;
+            place-items: center;
+            border-radius: 9px;
+            background: var(--blue-soft);
+            color: var(--blue);
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stTextInput"] input {
+            min-height: 52px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #ffffff;
+            color: var(--ink);
+            font-size: 0.96rem;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        }
+
+        div[data-testid="stTextArea"] textarea:focus,
+        div[data-testid="stTextInput"] input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.13);
+        }
+
+        div[data-testid="stTextArea"] label,
+        div[data-testid="stTextInput"] label {
+            color: var(--ink-soft);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .stButton > button {
+            min-height: 44px;
+            border-radius: 11px;
+            border: 1px solid #cbd5e1;
+            color: var(--ink-soft);
+            background: #ffffff;
+            font-weight: 700;
+            transition: all 0.18s ease;
+        }
+
+        .stButton > button:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+        }
+
+        .stButton > button[kind="primary"] {
+            border: 0;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+        }
+
+        .stButton > button[kind="primary"]:hover {
+            color: #ffffff;
+            background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%);
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.28);
+            transform: translateY(-1px);
+        }
+
+        [data-baseweb="tab-list"] {
+            gap: 0.45rem;
+            padding: 0.35rem;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: rgba(241, 245, 249, 0.78);
+        }
+
+        [data-baseweb="tab"] {
+            height: 42px;
+            padding: 0 1.05rem;
+            border-radius: 9px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        [aria-selected="true"][data-baseweb="tab"] {
+            color: var(--ink);
+            background: #ffffff;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        [data-baseweb="tab-highlight"] {
+            display: none;
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 0.72rem;
+            margin: 1rem 0 1.4rem;
+        }
+
+        .metric-card {
+            min-height: 88px;
+            padding: 0.9rem 0.95rem;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: #ffffff;
+            box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .metric-value {
+            color: var(--ink);
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .metric-label {
+            margin-top: 0.48rem;
+            color: var(--muted);
+            font-size: 0.67rem;
+            font-weight: 750;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .status-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 1rem 0 0.85rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid #dbeafe;
+            border-radius: 13px;
+            background: linear-gradient(90deg, #eff6ff 0%, #f5f3ff 100%);
+        }
+
+        .status-label {
+            color: var(--muted);
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            color: var(--ink);
+            font-size: 0.92rem;
+            font-weight: 800;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.58rem;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            font-size: 0.67rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-corroborated { color: var(--green); background: var(--green-soft); border-color: #bbf7d0; }
+        .badge-contested { color: var(--red); background: var(--red-soft); border-color: #fecaca; }
+        .badge-single_source { color: var(--amber); background: var(--amber-soft); border-color: #fde68a; }
+        .badge-domain { color: #4338ca; background: #eef2ff; border-color: #c7d2fe; }
+
+        .stepper-wrap {
+            position: relative;
+            overflow-x: auto;
+            padding: 0.95rem 0.2rem 0.7rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .stepper {
+            display: flex;
+            min-width: 650px;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step {
+            flex: 1;
+            min-width: 125px;
+            text-align: center;
+        }
+
+        .step-circle {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            margin: 0 auto 0.55rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            background: #ffffff;
+            color: var(--muted);
+            font-size: 0.74rem;
+            font-weight: 800;
+        }
+
+        .step.done .step-circle {
+            border-color: var(--blue);
+            color: #ffffff;
+            background: var(--blue);
+        }
+
+        .step.active .step-circle {
+            border-color: var(--violet);
+            color: var(--violet);
+            box-shadow: 0 0 0 5px rgba(124, 58, 237, 0.12);
+        }
+
+        .step-label { color: var(--ink-soft); font-size: 0.75rem; font-weight: 750; }
+        .step-sub { min-height: 15px; margin-top: 0.2rem; color: var(--muted); font-size: 0.66rem; }
+        .stepper-line-base { position: absolute; top: 34px; left: 10%; right: 10%; height: 2px; background: #e2e8f0; z-index: 1; }
+        .stepper-line-progress { position: absolute; top: 34px; left: 10%; height: 2px; background: linear-gradient(90deg, var(--blue), var(--violet)); z-index: 1; transition: width 0.3s ease; }
+
+        .concl-index {
+            color: var(--blue);
+            font-size: 0.69rem;
+            font-weight: 850;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .concl-text {
+            margin: 0.6rem 0 1rem;
+            color: var(--ink);
+            font-size: 1.02rem;
+            font-weight: 650;
+            line-height: 1.55;
+        }
+
+        div[data-testid="stExpander"] {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: #ffffff;
+        }
+
+        div[data-testid="stExpander"] summary p {
+            color: var(--ink-soft);
+            font-weight: 700;
+        }
+
+        .section-divider {
+            height: 1px;
+            margin: 1.7rem 0;
+            background: var(--line);
+        }
+
+        .footer-note {
+            margin-top: 2rem;
+            color: var(--muted);
+            font-size: 0.72rem;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .block-container { padding-top: 1.35rem; }
+            .topbar { align-items: flex-start; }
+            .status-pill { display: none; }
+            .hero { padding: 1.55rem 1.25rem; border-radius: 18px; }
+            .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .workspace-heading { display: block; }
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
 
-# --------------------------------------------------------------------------- small components
+def render_topbar():
+    st.markdown(
+        """
+        <div class="topbar">
+            <div class="brand-lockup">
+                <div class="brand-mark">AI</div>
+                <div>
+                    <div class="brand-name">MODUS RESEARCH INTELLIGENCE</div>
+                    <div class="brand-subtitle">Enterprise evidence, built for decisions</div>
+                </div>
+            </div>
+            <div class="status-pill"><span class="status-dot"></span>Research engine ready</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_hero():
+    st.markdown(
+        """
+        <section class="hero">
+            <div class="hero-kicker">Modus AI · Assignment 09</div>
+            <h1 class="hero-title">Turn a question into an evidence-backed research dossier.</h1>
+            <p class="hero-copy">
+                Explore any industry with a transparent multi-agent pipeline that plans the research,
+                gathers sources, compares evidence, detects contradictions, and preserves every conclusion's provenance.
+            </p>
+            <div class="hero-tags">
+                <span class="hero-tag">Dynamic research planning</span>
+                <span class="hero-tag">Structured evidence</span>
+                <span class="hero-tag">Full traceability</span>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# --------------------------------------------------------------------------- pipeline and result components
 PIPELINE_STAGES = [
-    {"key": "classify", "num": "01", "label": "Classify & Plan", "event_stages": {"classify"}},
-    {"key": "search", "num": "02", "label": "Search & Collect", "event_stages": {"search", "collect"}},
-    {"key": "extract", "num": "03", "label": "Extract Findings", "event_stages": {"extract"}},
-    {"key": "compare", "num": "04", "label": "Compare Evidence", "event_stages": {"compare", "contradictions"}},
+    {"key": "classify", "num": "01", "label": "Classify & plan", "event_stages": {"classify"}},
+    {"key": "search", "num": "02", "label": "Search & collect", "event_stages": {"search", "collect"}},
+    {"key": "extract", "num": "03", "label": "Extract findings", "event_stages": {"extract"}},
+    {"key": "compare", "num": "04", "label": "Compare evidence", "event_stages": {"compare", "contradictions"}},
     {"key": "synthesize", "num": "05", "label": "Synthesize", "event_stages": {"synthesize", "done"}},
 ]
 
 
 def render_stepper(events: list[dict], status: str):
-    seen_stages = {e["stage"] for e in events}
-    stage_counts = {}
-    for e in events:
-        stage_counts.setdefault(e["stage"], 0)
-        stage_counts[e["stage"]] += 1
+    seen_stages = {event["stage"] for event in events}
+    stage_counts: dict[str, int] = {}
+    for event in events:
+        stage_counts[event["stage"]] = stage_counts.get(event["stage"], 0) + 1
 
     reached_idx = -1
-    for i, s in enumerate(PIPELINE_STAGES):
-        if s["event_stages"] & seen_stages:
-            reached_idx = i
+    for index, stage in enumerate(PIPELINE_STAGES):
+        if stage["event_stages"] & seen_stages:
+            reached_idx = index
 
     steps_html = []
-    for i, s in enumerate(PIPELINE_STAGES):
-        touched = bool(s["event_stages"] & seen_stages)
-        is_last_reached = (i == reached_idx) and status == "running"
+    for index, stage in enumerate(PIPELINE_STAGES):
+        touched = bool(stage["event_stages"] & seen_stages)
+        active = index == reached_idx and status in {"running", "failed"}
         if status == "done" and touched:
             css_class = "done"
-        elif status == "failed" and touched and i == reached_idx:
-            css_class = "active"
-        elif is_last_reached:
+        elif active:
             css_class = "active"
         elif touched:
             css_class = "done"
         else:
             css_class = ""
 
-        sub_count = sum(stage_counts.get(es, 0) for es in s["event_stages"])
-        sub_text = f"{sub_count} event(s)" if sub_count else ""
-
+        event_count = sum(stage_counts.get(name, 0) for name in stage["event_stages"])
+        sub_text = f"{event_count} event(s)" if event_count else "Waiting"
         steps_html.append(
             f'<div class="step {css_class}">'
-            f'<div class="step-circle">{s["num"]}</div>'
-            f'<div class="step-label">{s["label"]}</div>'
+            f'<div class="step-circle">{stage["num"]}</div>'
+            f'<div class="step-label">{stage["label"]}</div>'
             f'<div class="step-sub">{sub_text}</div>'
             f'</div>'
         )
 
-    n = len(PIPELINE_STAGES)
-    progress_ratio = max(reached_idx, 0) / (n - 1) if reached_idx >= 0 else 0.0
+    stage_count = len(PIPELINE_STAGES)
+    progress_ratio = max(reached_idx, 0) / (stage_count - 1) if reached_idx >= 0 else 0.0
     if status == "done":
         progress_ratio = 1.0
-    progress_pct = round(progress_ratio * 86, 1)
+    progress_pct = round(progress_ratio * 80, 1)
 
-    html = f"""
-    <div class="stepper-wrap">
-        <div class="stepper-line-base"></div>
-        <div class="stepper-line-progress" style="width:{progress_pct}%;"></div>
-        <div class="stepper">{''.join(steps_html)}</div>
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="stepper-wrap">
+            <div class="stepper-line-base"></div>
+            <div class="stepper-line-progress" style="width:{progress_pct}%;"></div>
+            <div class="stepper">{''.join(steps_html)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_metric_row(stats: dict):
@@ -205,8 +730,9 @@ def render_metric_row(stats: dict):
         ("Conclusions", stats["conclusion_count"]),
     ]
     cards = "".join(
-        f'<div class="metric-card"><div class="metric-value">{v}</div><div class="metric-label">{label}</div></div>'
-        for label, v in items
+        f'<div class="metric-card"><div class="metric-value">{value}</div>'
+        f'<div class="metric-label">{label}</div></div>'
+        for label, value in items
     )
     st.markdown(f'<div class="metric-row">{cards}</div>', unsafe_allow_html=True)
 
@@ -214,32 +740,40 @@ def render_metric_row(stats: dict):
 def render_classification_chart(stats: dict):
     labels = ["Corroborated", "Single source", "Contested"]
     values = [stats["corroborated_count"], stats["single_source_count"], stats["contested_count"]]
-    colors = ["#2F6E4F", "#8A6B2A", "#A13D3D"]
+    colors = ["#15803d", "#a16207", "#b91c1c"]
     if sum(values) == 0:
+        st.info("Evidence classifications will appear when findings are available.")
         return
-    fig = go.Figure(go.Bar(
-        x=values, y=labels, orientation="h",
-        marker_color=colors,
-        text=values, textposition="outside",
-    ))
-    fig.update_layout(
-        height=180,
-        margin=dict(l=10, r=10, t=10, b=10),
+
+    figure = go.Figure(
+        go.Bar(
+            x=values,
+            y=labels,
+            orientation="h",
+            marker_color=colors,
+            text=values,
+            textposition="outside",
+            hovertemplate="%{y}: %{x}<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        height=190,
+        margin=dict(l=8, r=35, t=12, b=8),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="IBM Plex Mono, monospace", size=12, color="#14181F"),
+        font=dict(family="Inter, sans-serif", size=12, color="#0f172a"),
         xaxis=dict(showgrid=False, zeroline=False, visible=False),
         yaxis=dict(showgrid=False),
         showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
 
 
 def _confidence(findings: list[dict]):
     if not findings:
         return "Unverified", "single_source"
-    corroborated = sum(1 for f in findings if f["classification"] == "corroborated")
-    contested = sum(1 for f in findings if f["classification"] == "contested")
+    corroborated = sum(1 for finding in findings if finding["classification"] == "corroborated")
+    contested = sum(1 for finding in findings if finding["classification"] == "contested")
     if contested > 0 and contested >= corroborated:
         return "Disputed", "contested"
     if corroborated / len(findings) >= 0.5:
@@ -251,17 +785,25 @@ def render_conclusion_card(index: int, conclusion: dict):
     label, css_class = _confidence(conclusion["findings"])
     with st.container(border=True):
         st.markdown(
-            f'<span class="concl-index">FINDING {index:02d}</span> '
+            f'<span class="concl-index">CONCLUSION {index:02d}</span> '
             f'<span class="badge badge-{css_class}">{label}</span>',
             unsafe_allow_html=True,
         )
         st.markdown(f'<div class="concl-text">{conclusion["text"]}</div>', unsafe_allow_html=True)
-        df = pd.DataFrame([
-            {"Claim": f["claim"], "Classification": f["classification"].replace("_", " "), "Source": f["source_url"]}
-            for f in conclusion["findings"]
-        ])
+        frame = pd.DataFrame(
+            [
+                {
+                    "Claim": finding["claim"],
+                    "Classification": finding["classification"].replace("_", " "),
+                    "Source": finding["source_url"],
+                }
+                for finding in conclusion["findings"]
+            ]
+        )
         st.dataframe(
-            df, use_container_width=True, hide_index=True,
+            frame,
+            use_container_width=True,
+            hide_index=True,
             column_config={"Source": st.column_config.LinkColumn("Source")},
         )
 
@@ -269,53 +811,104 @@ def render_conclusion_card(index: int, conclusion: dict):
 def render_contradiction_card(contradiction: dict):
     with st.container(border=True):
         st.markdown(
-            f'<span class="badge badge-contested">Contradiction</span>&nbsp;&nbsp;{contradiction["explanation"] or ""}',
+            f'<span class="badge badge-contested">Contradiction</span>&nbsp;&nbsp;'
+            f'{contradiction["explanation"] or "The sources disagree on this point."}',
             unsafe_allow_html=True,
         )
-        col_a, col_b = st.columns(2)
-        with col_a:
+        left, right = st.columns(2)
+        with left:
             st.caption("Source A")
             st.write(contradiction["finding_a"]["claim"])
-            st.markdown(f'[{contradiction["finding_a"]["source_url"]}]({contradiction["finding_a"]["source_url"]})')
-        with col_b:
+            st.markdown(
+                f'[{contradiction["finding_a"]["source_url"]}]'
+                f'({contradiction["finding_a"]["source_url"]})'
+            )
+        with right:
             st.caption("Source B")
             st.write(contradiction["finding_b"]["claim"])
-            st.markdown(f'[{contradiction["finding_b"]["source_url"]}]({contradiction["finding_b"]["source_url"]})')
+            st.markdown(
+                f'[{contradiction["finding_b"]["source_url"]}]'
+                f'({contradiction["finding_b"]["source_url"]})'
+            )
 
 
-# --------------------------------------------------------------------------- app
+def render_status_banner(detail: dict):
+    domain = detail.get("domain")
+    status = detail.get("status", "pending").replace("_", " ").title()
+    domain_markup = (
+        f'<span class="badge badge-domain">{domain}</span>' if domain else "Detecting domain"
+    )
+    st.markdown(
+        f"""
+        <div class="status-banner">
+            <div><div class="status-label">Run status</div><div class="status-value">{status}</div></div>
+            <div><div class="status-label">Research domain</div><div class="status-value">{domain_markup}</div></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# --------------------------------------------------------------------------- application
 inject_base_styles()
+render_topbar()
+render_hero()
 
-st.markdown(
-    """
-    <div class="app-header">
-        <div class="app-title">Enterprise AI Research Agent</div>
-        <div class="app-subtitle">MULTI-AGENT RESEARCH PIPELINE &middot; STRUCTURED EVIDENCE &middot; FULL TRACEABILITY</div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-tab_new, tab_kb, tab_about = st.tabs(["New Research", "Knowledge Base", "Architecture"])
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+tab_new, tab_kb, tab_about = st.tabs(["Research workspace", "Knowledge base", "Architecture"])
 
 
-# ---------------------------------------------------------------- New Research
+# --------------------------------------------------------------------------- Research workspace
 with tab_new:
-    st.write(
-        "Submit any research question, in any industry. A classifier agent detects the domain "
-        "and plans the research; downstream agents search, extract, cross-check, and synthesize "
-        "evidence-backed conclusions."
+    st.markdown(
+        """
+        <div class="workspace-heading">
+            <div>
+                <div class="eyebrow">Start an investigation</div>
+                <h2 class="section-title">What do you need to understand?</h2>
+                <p class="section-note">
+                    Ask a business research question in plain language. The system will determine the domain,
+                    plan the investigation, retrieve evidence, and build a traceable answer.
+                </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    question = st.text_input(
-        "Research question",
-        placeholder="e.g. How is AI transforming retail operations?",
-        label_visibility="collapsed",
-    )
-    submit = st.button("Run research", type="primary")
+
+    input_col, workflow_col = st.columns([1.55, 0.9], gap="large")
+    with input_col:
+        st.markdown('<div class="surface">', unsafe_allow_html=True)
+        question = st.text_area(
+            "Research question",
+            placeholder="Example: How is AI transforming retail operations?",
+            height=118,
+            label_visibility="visible",
+        )
+        submit = st.button("Run evidence-backed research", type="primary", use_container_width=True)
+        st.caption("Try a new industry or topic. The pipeline is designed for live, domain-agnostic questions.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with workflow_col:
+        st.markdown(
+            """
+            <div class="surface">
+                <div class="surface-title">What happens next</div>
+                <p class="surface-copy">Every stage produces structured, reviewable output.</p>
+                <div class="workflow-list">
+                    <div class="workflow-item"><span class="workflow-number">01</span>Classify the domain and plan sub-questions</div>
+                    <div class="workflow-item"><span class="workflow-number">02</span>Search and collect relevant source pages</div>
+                    <div class="workflow-item"><span class="workflow-number">03</span>Extract and compare discrete findings</div>
+                    <div class="workflow-item"><span class="workflow-number">04</span>Synthesize conclusions with provenance</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     if submit and question.strip():
-        resp = api_post("/research", json={"question": question.strip()})
-        st.session_state["active_topic_id"] = resp["id"]
+        response = api_post("/research", json={"question": question.strip()})
+        st.session_state["active_topic_id"] = response["id"]
 
     topic_id = st.session_state.get("active_topic_id")
     if topic_id:
@@ -324,27 +917,23 @@ with tab_new:
         log_box = st.empty()
         results_box = st.empty()
 
-        for _ in range(180):  # ~6 minute max poll window
+        for _ in range(180):
             detail = api_get(f"/research/{topic_id}")
 
             with header_box.container():
-                domain = detail.get("domain")
-                domain_html = f'<span class="badge badge-domain">{domain}</span>' if domain else ""
-                st.markdown(
-                    f'<div style="margin-bottom:4px;"><strong>Status:</strong> {detail["status"]} &nbsp;&nbsp; '
-                    f'<strong>Domain:</strong> {domain_html or "detecting&hellip;"}</div>',
-                    unsafe_allow_html=True,
-                )
+                render_status_banner(detail)
 
             with stepper_box.container():
+                st.markdown('<div class="surface">', unsafe_allow_html=True)
                 render_stepper(detail["events"], detail["status"])
+                st.markdown('</div>', unsafe_allow_html=True)
 
             with log_box.container():
-                with st.expander("Activity log", expanded=False):
-                    for e in detail["events"]:
+                with st.expander("View activity log", expanded=False):
+                    for event in detail["events"]:
                         st.markdown(
-                            f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:0.78rem;color:var(--muted);">'
-                            f'[{e["stage"]}]</span> {e["message"]}',
+                            f'<span class="eyebrow">{event["stage"]}</span>&nbsp;&nbsp;'
+                            f'{event["message"]}',
                             unsafe_allow_html=True,
                         )
 
@@ -353,103 +942,201 @@ with tab_new:
                     if detail["status"] == "done":
                         render_metric_row(detail["stats"])
 
-                        col_chart, col_gap = st.columns([2, 1])
-                        with col_chart:
-                            st.markdown("**Evidence classification**")
+                        chart_col, insight_col = st.columns([1.15, 0.85], gap="large")
+                        with chart_col:
+                            st.markdown("#### Evidence profile")
                             render_classification_chart(detail["stats"])
+                        with insight_col:
+                            st.markdown("#### What the numbers mean")
+                            st.markdown(
+                                """
+                                <div class="surface">
+                                    <p class="surface-copy">
+                                        <strong>Corroborated</strong> findings are supported by more than one source.
+                                        <strong>Contested</strong> findings contain disagreement. <strong>Single-source</strong>
+                                        findings are useful signals that still need additional confirmation.
+                                    </p>
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
 
                         st.markdown("### Conclusions")
-                        for i, c in enumerate(detail["conclusions"], start=1):
-                            render_conclusion_card(i, c)
+                        st.caption("Each conclusion is linked to the findings and source URLs that support it.")
+                        for index, conclusion in enumerate(detail["conclusions"], start=1):
+                            render_conclusion_card(index, conclusion)
 
                         if detail["contradictions"]:
                             st.markdown("### Contradictions detected")
-                            for c in detail["contradictions"]:
-                                render_contradiction_card(c)
+                            st.caption("These source-level disagreements are retained as structured evidence.")
+                            for contradiction in detail["contradictions"]:
+                                render_contradiction_card(contradiction)
 
-                        st.markdown("### All findings")
-                        st.caption("Every finding extracted during this run, grouped by sub-question.")
+                        st.markdown("### Complete findings")
+                        st.caption("Every extracted finding is grouped by the sub-question it answers.")
                         for group in detail["findings_by_sub_question"]:
-                            with st.expander(f"{group['sub_question']}  ({len(group['findings'])} findings)"):
+                            with st.expander(
+                                f'{group["sub_question"]}  ·  {len(group["findings"])} findings'
+                            ):
                                 if group["findings"]:
-                                    df = pd.DataFrame([
-                                        {
-                                            "Claim": f["claim"], "Detail": f["detail"] or "",
-                                            "Classification": f["classification"].replace("_", " "),
-                                            "Source": f["source_url"],
-                                        }
-                                        for f in group["findings"]
-                                    ])
+                                    frame = pd.DataFrame(
+                                        [
+                                            {
+                                                "Claim": finding["claim"],
+                                                "Detail": finding["detail"] or "",
+                                                "Classification": finding["classification"].replace("_", " "),
+                                                "Source": finding["source_url"],
+                                            }
+                                            for finding in group["findings"]
+                                        ]
+                                    )
                                     st.dataframe(
-                                        df, use_container_width=True, hide_index=True,
+                                        frame,
+                                        use_container_width=True,
+                                        hide_index=True,
                                         column_config={"Source": st.column_config.LinkColumn("Source")},
                                     )
                                     st.download_button(
-                                        "Download as CSV", df.to_csv(index=False),
+                                        "Download findings as CSV",
+                                        frame.to_csv(index=False),
                                         file_name=f"findings_{topic_id}.csv",
                                         key=f"dl_{group['sub_question'][:20]}_{topic_id}",
                                     )
                                 else:
-                                    st.caption("No findings extracted for this sub-question.")
+                                    st.caption("No findings were extracted for this sub-question.")
                     else:
-                        st.error("Pipeline failed before producing results. See the activity log above for details.")
+                        st.error("The research run stopped before producing results. See the activity log for details.")
                 break
 
             time.sleep(2)
 
 
-# ------------------------------------------------------------------- Knowledge Base
+# --------------------------------------------------------------------------- Knowledge base
 with tab_kb:
-    st.markdown("### Past research runs")
-    topics = api_get("/research")
-    if not topics:
-        st.caption("No research runs yet. Submit one in the New Research tab.")
-    for t in topics:
-        domain_html = f'<span class="badge badge-domain">{t.get("domain")}</span>' if t.get("domain") else ""
-        with st.expander(f"{t['question']}  —  {t['status']}"):
-            st.markdown(domain_html, unsafe_allow_html=True)
-            detail = api_get(f"/research/{t['id']}")
+    st.markdown(
+        """
+        <div class="workspace-heading">
+            <div>
+                <div class="eyebrow">Reusable intelligence</div>
+                <h2 class="section-title">Knowledge base</h2>
+                <p class="section-note">
+                    Browse past investigations and search across every finding collected so far.
+                    This is where individual research runs become a reusable intelligence asset.
+                </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    topics = api_get("/research", stop_on_error=False)
+    st.markdown("#### Past research runs")
+    if topics is None:
+        st.info("The knowledge base will appear here when the research engine is connected.")
+    elif not topics:
+        st.info("No research runs yet. Start an investigation in the Research workspace.")
+    for topic in topics or []:
+        domain_markup = (
+            f'<span class="badge badge-domain">{topic.get("domain")}</span>'
+            if topic.get("domain")
+            else ""
+        )
+        with st.expander(f'{topic["question"]}  ·  {topic["status"]}'):
+            st.markdown(domain_markup, unsafe_allow_html=True)
+            detail = api_get(f'/research/{topic["id"]}')
             if detail["status"] == "done":
                 render_metric_row(detail["stats"])
-                for c in detail["conclusions"]:
-                    st.markdown(f"- {c['text']}")
+                for conclusion in detail["conclusions"]:
+                    st.markdown(f'- {conclusion["text"]}')
 
-    st.divider()
-    st.markdown("### Search the knowledge base")
-    st.caption("Semantic search across every finding ever extracted, from any past research run.")
-    kb_query = st.text_input("Search", key="kb_search", label_visibility="collapsed", placeholder="e.g. demand forecasting")
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("#### Search across findings")
+    st.caption("Use a concept, business problem, technology, or capability to find related evidence.")
+    kb_query = st.text_input(
+        "Knowledge-base query",
+        key="kb_search",
+        placeholder="Example: demand forecasting",
+        label_visibility="collapsed",
+    )
     if kb_query:
         results = api_get("/knowledge-base/search", params={"q": kb_query})
         if results["results"]:
-            df = pd.DataFrame([
-                {"Finding": h["text"], "Domain": h["metadata"].get("domain", ""), "Source": h["metadata"].get("source_url", "")}
-                for h in results["results"]
-            ])
+            frame = pd.DataFrame(
+                [
+                    {
+                        "Finding": hit["text"],
+                        "Domain": hit["metadata"].get("domain", ""),
+                        "Source": hit["metadata"].get("source_url", ""),
+                    }
+                    for hit in results["results"]
+                ]
+            )
             st.dataframe(
-                df, use_container_width=True, hide_index=True,
+                frame,
+                use_container_width=True,
+                hide_index=True,
                 column_config={"Source": st.column_config.LinkColumn("Source")},
             )
         else:
-            st.caption("No matching findings yet.")
+            st.info("No matching findings yet.")
 
 
-# ------------------------------------------------------------------------- Architecture
+# --------------------------------------------------------------------------- Architecture
 with tab_about:
-    st.markdown("### Pipeline")
-    render_stepper(
-        [{"stage": s, "message": ""} for stage in PIPELINE_STAGES for s in stage["event_stages"]],
-        status="done",
-    )
     st.markdown(
         """
-| Layer | Component | Notes |
-|---|---|---|
-| UI | Streamlit (`frontend/app.py`) | This dashboard |
-| API | FastAPI (`backend/main.py`, `backend/routes/`) | `/research` endpoints |
-| AI Intelligence | 5-agent pipeline (`backend/agents/`) | Classifier &rarr; Search &rarr; Extraction &rarr; Evidence &rarr; Synthesis |
-| Data & Knowledge | SQLite + ChromaDB (`backend/db/`) | Persistent, restart-safe, offline vector search |
-| External research | Tavily search API | Free tier, agent-oriented |
-| LLM | Groq (Llama 3.3 70B) | Free tier, open-weight model |
-"""
+        <div class="workspace-heading">
+            <div>
+                <div class="eyebrow">How it works</div>
+                <h2 class="section-title">A transparent research architecture</h2>
+                <p class="section-note">
+                    The application separates interface, orchestration, intelligence, persistence, and external research
+                    so every stage can be inspected and explained.
+                </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    st.caption("Full detail, including design rationale, in README.md and docs/architecture.md in the repository.")
+
+    st.markdown('<div class="surface">', unsafe_allow_html=True)
+    render_stepper(
+        [{"stage": stage, "message": ""} for item in PIPELINE_STAGES for stage in item["event_stages"]],
+        status="done",
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    architecture_col, principles_col = st.columns([1.1, 0.9], gap="large")
+    with architecture_col:
+        st.markdown(
+            """
+            | Layer | Component | Role |
+            |---|---|---|
+            | UI | Streamlit | Research workspace and dossier dashboard |
+            | API | FastAPI | Run control, polling, and structured responses |
+            | Intelligence | Five-stage agent pipeline | Plan, search, extract, compare, synthesize |
+            | Knowledge | SQLite + ChromaDB | Persistent records and cross-run retrieval |
+            | Research | Tavily | External source discovery and page content |
+            | LLM | Groq · Llama 3.3 70B | Structured agent reasoning |
+            """
+        )
+    with principles_col:
+        st.markdown(
+            """
+            <div class="surface">
+                <div class="surface-title">Design principles</div>
+                <div class="workflow-list">
+                    <div class="workflow-item"><span class="workflow-number">01</span>Evidence before conclusions</div>
+                    <div class="workflow-item"><span class="workflow-number">02</span>Every conclusion has provenance</div>
+                    <div class="workflow-item"><span class="workflow-number">03</span>Failures degrade gracefully</div>
+                    <div class="workflow-item"><span class="workflow-number">04</span>Knowledge persists across runs</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+st.markdown(
+    '<div class="footer-note">Modus AI · Enterprise research intelligence · Structured evidence over unsupported summaries</div>',
+    unsafe_allow_html=True,
+)
