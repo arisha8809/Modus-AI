@@ -30,9 +30,12 @@ def _get_client():
 
 
 def search_web(query: str, max_results: int = 5) -> list[dict]:
-    """Returns a list of {title, url, content} dicts. `content` is Tavily's
-    already-extracted main page text, ready for the Extraction agent -- no
-    separate page-fetch step needed."""
+    """Returns normalized source records with content and publication metadata.
+
+    Tavily may expose ``published_date`` for news and dated pages. It is kept
+    as optional metadata so downstream analytics never invent a timeline when
+    a publisher did not provide one.
+    """
     client = _get_client()
     response = client.search(
         query=query,
@@ -45,5 +48,6 @@ def search_web(query: str, max_results: int = 5) -> list[dict]:
             "title": r.get("title", ""),
             "url": r.get("url", ""),
             "content": (r.get("content") or "")[:6000],
+            "published_date": r.get("published_date"),
         })
     return results

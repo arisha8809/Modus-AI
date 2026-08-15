@@ -7,7 +7,7 @@ see README for the Render deployment notes on this).
 """
 
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from .models import Base
 
@@ -21,6 +21,12 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Keep existing SQLite deployments compatible when new provenance fields
+    # are introduced without a full migration framework.
+    columns = {column["name"] for column in inspect(engine).get_columns("sources")}
+    if "published_date" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE sources ADD COLUMN published_date VARCHAR(64)"))
 
 
 def get_session():

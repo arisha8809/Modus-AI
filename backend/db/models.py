@@ -82,6 +82,7 @@ class Source(Base):
     url = Column(Text, nullable=False)
     title = Column(Text, nullable=True)
     raw_text = Column(Text, nullable=True)     # extracted page text (truncated)
+    published_date = Column(String(64), nullable=True)  # publisher date when available
     fetched_at = Column(DateTime, default=utcnow)
 
     sub_question = relationship("SubQuestion", back_populates="sources")

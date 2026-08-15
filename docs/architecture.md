@@ -22,14 +22,20 @@ so every downstream agent is generic.
 | Stage | Agent / component | Input | Output | Persisted as |
 |---|---|---|---|---|
 | 1 | Classifier Agent | raw research question | domain label + 3-5 sub-questions | `ResearchTopic.domain`, `SubQuestion` rows |
-| 2 | Search tool (DuckDuckGo) | one sub-question | list of candidate URLs | — |
-| 3 | Web fetch tool (trafilatura) | a URL | clean page text | `Source.raw_text` |
+| 2 | Search tool (Tavily) | one sub-question | ranked source title, URL, content, and optional publication date | — |
+| 3 | Source persistence | normalized search result | source page content plus provenance metadata | `Source.raw_text`, `Source.published_date` |
 | 4 | Extraction Agent | page text + sub-question | list of {claim, detail} | `Finding` rows |
-| 5 | Evidence Agent | all findings for a sub-question | classification per finding + contradiction pairs | `Finding.classification`, logged contradictions |
+| 5 | Evidence Agent | all findings for a sub-question | classification per finding + contradiction pairs | `Finding.classification`, `Contradiction` rows |
 | 6 | Synthesis Agent | all findings across all sub-questions | final conclusions + which finding ids support each | `Conclusion` rows + `conclusion_findings` join table |
 
 Every stage also writes a `PipelineEvent` row, which is what lets the Streamlit UI show live
 progress during a demo and gives a full audit trail afterward.
+
+The result dossier also computes transparent analytics from the stored graph rather than asking the
+LLM to invent presentation metrics: evidence counts by sub-question, source portfolio by domain and
+source type, strongest-evidence themes, contested themes requiring review, coverage gaps, and a
+publication-year timeline when retrieved sources expose publisher dates. Undated sources are excluded
+from the timeline and the UI displays the date coverage percentage explicitly.
 
 ## Data model
 
@@ -51,6 +57,9 @@ reached, the app walks `Conclusion → Finding → Source → url`, not a black-
 - SQLite handles the structured, relational side (exact traceability queries).
 - Chroma handles the "fuzzy" side — semantic search across findings from *any* past research
   run, which is what makes the knowledge base reusable rather than a fresh scratchpad every time.
+- The dashboard is intentionally evidence-first: it exposes claim-level contradictions, source profiles,
+  sub-question coverage, decision signals, and dated research horizons before showing synthesized prose.
+  This is the product distinction from a chatbot that only returns a cited paragraph.
 
 **Scaling answer** (the brief's key judging question — "1,000 processes tomorrow instead of
 100"): the pipeline has no hardcoded assumption about volume. SQLite comfortably handles tens of

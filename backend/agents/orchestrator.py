@@ -85,6 +85,7 @@ def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 3):
                     url=r["url"],
                     title=r["title"],
                     raw_text=page_text,
+                    published_date=r.get("published_date"),
                 )
                 db.add(source)
                 db.commit()

@@ -1,7 +1,11 @@
+"""API routes: submit new research, poll status, fetch results, browse/search
+ the accumulated knowledge base.
 """
-API routes: submit new research, poll status, fetch results, browse/search
-the accumulated knowledge base.
-"""
+
+from collections import Counter, defaultdict
+from datetime import datetime
+import re
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -11,17 +15,70 @@ from ..db.models import ResearchTopic
 from ..db import vector_store
 from ..agents.orchestrator import run_pipeline
 from ..schemas import (
-    NewResearchRequest, TopicSummary, TopicDetail, TopicStats,
-    ConclusionOut, ContradictionOut, FindingOut, PipelineEventOut, SubQuestionFindingsOut,
+    NewResearchRequest,
+    TopicSummary,
+    TopicDetail,
+    TopicStats,
+    TopicAnalyticsOut,
+    TrendPointOut,
+    ConclusionOut,
+    ContradictionOut,
+    FindingOut,
+    PipelineEventOut,
+    SubQuestionFindingsOut,
 )
 
 router = APIRouter()
 
 
+def _source_domain(url: str) -> str:
+    host = (urlparse(url or "").netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host or "unknown source"
+
+
+def _source_type(url: str) -> str:
+    """Classify source provenance deterministically from its domain.
+
+    This is deliberately a transparent heuristic, not an LLM judgment. It is
+    presented as a source profile in the UI, not as a claim about source truth.
+    """
+    domain = _source_domain(url)
+    if domain.endswith(".gov") or domain.startswith("gov.") or ".gov." in domain or domain.endswith(".gov.uk"):
+        return "Government / public sector"
+    if domain.endswith(".edu") or domain.startswith("edu.") or ".edu." in domain or domain.endswith(".ac.uk"):
+        return "Academic / research"
+    if any(token in domain for token in ("reuters", "ft.com", "economist", "forbes", "wsj", "bloomberg", "bbc", "nytimes")):
+        return "News / analysis"
+    if any(token in domain for token in ("ibm", "microsoft", "google", "aws", "oracle", "salesforce", "deloitte", "accenture", "mckinsey", "pwc", "gartner")):
+        return "Vendor / industry"
+    return "General web"
+
+
+def _published_year(value: str | None) -> int | None:
+    if not value:
+        return None
+    match = re.search(r"\b(19|20)\d{2}\b", str(value))
+    if not match:
+        return None
+    year = int(match.group(0))
+    current_year = datetime.utcnow().year
+    return year if 1990 <= year <= current_year + 1 else None
+
+
 def _finding_out(f):
+    source = f.source
     return FindingOut(
-        id=f.id, claim=f.claim, detail=f.detail,
-        classification=f.classification, source_url=f.source.url,
+        id=f.id,
+        claim=f.claim,
+        detail=f.detail,
+        classification=f.classification,
+        source_url=source.url,
+        source_title=source.title,
+        source_domain=_source_domain(source.url),
+        source_published_date=source.published_date,
+        source_type=_source_type(source.url),
     )
 
 
@@ -29,6 +86,7 @@ def _run_pipeline_in_background(topic_id: int):
     # BackgroundTasks doesn't share the request's DB session (it's already
     # closed by the time this runs), so open a fresh one for the pipeline.
     from ..db.session import SessionLocal
+
     db = SessionLocal()
     try:
         run_pipeline(topic_id, db)
@@ -60,76 +118,156 @@ def list_research(db: Session = Depends(get_session)):
 
 @router.get("/research/{topic_id}", response_model=TopicDetail)
 def get_research(topic_id: int, db: Session = Depends(get_session)):
-    """Full detail for one topic: status, live pipeline event log, and any
-    conclusions generated so far -- each with its supporting findings and
-    source URLs for full traceability."""
+    """Full detail for one topic, including the evidence dossier and
+    decision-oriented analytics derived from its stored research graph."""
     topic = db.get(ResearchTopic, topic_id)
     if topic is None:
         raise HTTPException(404, "topic not found")
 
     conclusions_out = [
         ConclusionOut(
-            id=c.id,
-            text=c.text,
-            findings=[_finding_out(f) for f in c.findings],
+            id=conclusion.id,
+            text=conclusion.text,
+            findings=[_finding_out(finding) for finding in conclusion.findings],
         )
-        for c in topic.conclusions
+        for conclusion in topic.conclusions
     ]
     contradictions_out = [
         ContradictionOut(
-            id=c.id,
-            explanation=c.explanation,
-            finding_a=_finding_out(c.finding_a),
-            finding_b=_finding_out(c.finding_b),
+            id=contradiction.id,
+            explanation=contradiction.explanation,
+            finding_a=_finding_out(contradiction.finding_a),
+            finding_b=_finding_out(contradiction.finding_b),
         )
-        for c in topic.contradictions
+        for contradiction in topic.contradictions
     ]
     events_out = [
-        PipelineEventOut(stage=e.stage, message=e.message, created_at=e.created_at)
-        for e in sorted(topic.pipeline_events, key=lambda e: e.created_at)
+        PipelineEventOut(stage=event.stage, message=event.message, created_at=event.created_at)
+        for event in sorted(topic.pipeline_events, key=lambda event: event.created_at)
     ]
 
-    # Full findings breakdown, grouped by sub-question -- this is the data
-    # that makes the UI a research dossier rather than a chat summary: every
-    # finding the pipeline extracted, not just the subset a conclusion cited.
     findings_by_sub_question = []
     all_findings = []
     source_count = 0
-    for sq in topic.sub_questions:
-        sq_findings = []
-        for src in sq.sources:
+    dated_source_count = 0
+    source_type_counts: Counter[str] = Counter()
+    source_domain_counts: Counter[str] = Counter()
+    timeline = defaultdict(
+        lambda: {
+            "source_count": 0,
+            "finding_count": 0,
+            "corroborated_count": 0,
+            "contested_count": 0,
+            "single_source_count": 0,
+        }
+    )
+    sub_question_breakdown = []
+
+    for sub_question in topic.sub_questions:
+        sub_question_findings = []
+        sub_question_sources = 0
+        sub_question_classifications: Counter[str] = Counter()
+
+        for source in sub_question.sources:
             source_count += 1
-            for f in src.findings:
-                sq_findings.append(_finding_out(f))
-                all_findings.append(f)
+            sub_question_sources += 1
+            source_type_counts[_source_type(source.url)] += 1
+            source_domain_counts[_source_domain(source.url)] += 1
+            year = _published_year(source.published_date)
+            if year is not None:
+                dated_source_count += 1
+                timeline[year]["source_count"] += 1
+
+            for finding in source.findings:
+                sub_question_findings.append(_finding_out(finding))
+                all_findings.append(finding)
+                classification = finding.classification or "single_source"
+                sub_question_classifications[classification] += 1
+                if year is not None:
+                    timeline[year]["finding_count"] += 1
+                    timeline[year][f"{classification}_count"] += 1
+
+        sub_question_breakdown.append(
+            {
+                "sub_question": sub_question.text,
+                "source_count": sub_question_sources,
+                "finding_count": len(sub_question_findings),
+                "corroborated_count": sub_question_classifications["corroborated"],
+                "contested_count": sub_question_classifications["contested"],
+                "single_source_count": sub_question_classifications["single_source"],
+            }
+        )
         findings_by_sub_question.append(
-            SubQuestionFindingsOut(sub_question=sq.text, findings=sq_findings)
+            SubQuestionFindingsOut(sub_question=sub_question.text, findings=sub_question_findings)
         )
 
     stats = TopicStats(
         sub_question_count=len(topic.sub_questions),
         source_count=source_count,
         finding_count=len(all_findings),
-        corroborated_count=sum(1 for f in all_findings if f.classification == "corroborated"),
-        contested_count=sum(1 for f in all_findings if f.classification == "contested"),
-        single_source_count=sum(1 for f in all_findings if f.classification == "single_source"),
+        corroborated_count=sum(1 for finding in all_findings if finding.classification == "corroborated"),
+        contested_count=sum(1 for finding in all_findings if finding.classification == "contested"),
+        single_source_count=sum(1 for finding in all_findings if finding.classification == "single_source"),
         contradiction_count=len(topic.contradictions),
         conclusion_count=len(topic.conclusions),
     )
 
+    strongest_topics = sorted(
+        sub_question_breakdown,
+        key=lambda row: (row["corroborated_count"], row["finding_count"]),
+        reverse=True,
+    )
+    review_topics = sorted(
+        [row for row in sub_question_breakdown if row["contested_count"] > 0],
+        key=lambda row: row["contested_count"],
+        reverse=True,
+    )
+    coverage_gaps = [
+        row["sub_question"]
+        for row in sub_question_breakdown
+        if row["finding_count"] == 0 or row["corroborated_count"] == 0
+    ]
+
+    analytics = TopicAnalyticsOut(
+        dated_source_count=dated_source_count,
+        undated_source_count=max(source_count - dated_source_count, 0),
+        date_coverage_percent=round((dated_source_count / source_count) * 100, 1) if source_count else 0.0,
+        source_type_counts=dict(source_type_counts),
+        source_domain_counts=[
+            {"domain": domain, "count": count}
+            for domain, count in source_domain_counts.most_common(12)
+        ],
+        timeline=[
+            TrendPointOut(year=year, **values)
+            for year, values in sorted(timeline.items())
+        ],
+        sub_question_breakdown=sub_question_breakdown,
+        decision_signals={
+            "strongest_evidence": [row["sub_question"] for row in strongest_topics[:3] if row["finding_count"]],
+            "needs_review": [row["sub_question"] for row in review_topics[:3]],
+            "coverage_gaps": coverage_gaps[:3],
+        },
+    )
+
     return TopicDetail(
-        id=topic.id, question=topic.question, domain=topic.domain, status=topic.status,
-        stats=stats, conclusions=conclusions_out, contradictions=contradictions_out,
-        findings_by_sub_question=findings_by_sub_question, events=events_out,
+        id=topic.id,
+        question=topic.question,
+        domain=topic.domain,
+        status=topic.status,
+        stats=stats,
+        analytics=analytics,
+        conclusions=conclusions_out,
+        contradictions=contradictions_out,
+        findings_by_sub_question=findings_by_sub_question,
+        events=events_out,
     )
 
 
 @router.get("/knowledge-base/search")
 def search_knowledge_base(q: str, limit: int = 8):
     """Semantic search across every finding ever extracted, from any past
-    research run. This is what makes the knowledge base reusable rather than
-    a fresh scratchpad per query -- the whole point the brief calls out as
-    distinguishing this from 'ChatGPT with web search'."""
+    research run. This makes the knowledge base reusable rather than a fresh
+    scratchpad per query."""
     if not q.strip():
         raise HTTPException(400, "q must not be empty")
     results = vector_store.query_findings(q, n_results=limit)
@@ -137,6 +275,6 @@ def search_knowledge_base(q: str, limit: int = 8):
     ids = results.get("ids", [[]])[0]
     docs = results.get("documents", [[]])[0]
     metas = results.get("metadatas", [[]])[0]
-    for i, doc, meta in zip(ids, docs, metas):
-        hits.append({"finding_id": i, "text": doc, "metadata": meta})
+    for finding_id, doc, meta in zip(ids, docs, metas):
+        hits.append({"finding_id": finding_id, "text": doc, "metadata": meta})
     return {"query": q, "results": hits}

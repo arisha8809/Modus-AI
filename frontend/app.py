@@ -7,6 +7,7 @@ traceable conclusions backed by source URLs.
 
 import os
 import time
+from html import escape
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -604,6 +605,161 @@ def inject_base_styles():
             text-align: center;
         }
 
+        .difference-banner {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 1rem;
+            margin: 1.2rem 0 1.5rem;
+            padding: 1.15rem 1.25rem;
+            border: 1px solid #c7d2fe;
+            border-radius: 16px;
+            background: linear-gradient(110deg, #eef2ff 0%, #f8fafc 68%);
+        }
+
+        .difference-title {
+            margin: 0 0 0.35rem;
+            color: #312e81;
+            font-size: 0.98rem;
+            font-weight: 800;
+        }
+
+        .difference-copy {
+            margin: 0;
+            color: var(--ink-soft);
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+
+        .difference-list {
+            display: grid;
+            gap: 0.45rem;
+            align-content: center;
+        }
+
+        .difference-item {
+            display: flex;
+            gap: 0.55rem;
+            align-items: center;
+            color: var(--ink-soft);
+            font-size: 0.76rem;
+            font-weight: 650;
+        }
+
+        .difference-check {
+            display: grid;
+            flex: 0 0 auto;
+            width: 20px;
+            height: 20px;
+            place-items: center;
+            border-radius: 6px;
+            color: #ffffff;
+            background: #4f46e5;
+            font-size: 0.7rem;
+            font-weight: 800;
+        }
+
+        .signal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 0.75rem 0 1.35rem;
+        }
+
+        .signal-card {
+            min-height: 106px;
+            padding: 0.95rem 1rem;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .signal-kicker {
+            color: var(--muted);
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+        }
+
+        .signal-value {
+            margin-top: 0.3rem;
+            color: var(--ink);
+            font-size: 1.36rem;
+            font-weight: 820;
+        }
+
+        .signal-detail {
+            margin-top: 0.25rem;
+            color: var(--muted);
+            font-size: 0.73rem;
+            line-height: 1.35;
+        }
+
+        .claim-panel {
+            margin: 0.85rem 0;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: #f8fafc;
+        }
+
+        .claim-panel-a { border-left: 4px solid #2563eb; }
+        .claim-panel-b { border-left: 4px solid #c026d3; }
+
+        .claim-label {
+            color: var(--muted);
+            font-size: 0.67rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .claim-text {
+            margin-top: 0.35rem;
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.45;
+        }
+
+        .claim-detail {
+            margin-top: 0.35rem;
+            color: var(--ink-soft);
+            font-size: 0.78rem;
+            line-height: 1.45;
+        }
+
+        .source-meta {
+            margin-top: 0.55rem;
+            color: var(--muted);
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+
+        .source-meta a { color: var(--blue); word-break: break-word; }
+
+        .chart-surface {
+            padding: 0.9rem 1rem 0.35rem;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #ffffff;
+        }
+
+        .chart-title {
+            margin: 0;
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .chart-caption {
+            margin: 0.3rem 0 0;
+            color: var(--muted);
+            font-size: 0.73rem;
+            line-height: 1.4;
+        }
+
         @media (max-width: 900px) {
             .block-container { padding-top: 1.35rem; }
             .topbar { align-items: flex-start; }
@@ -611,6 +767,8 @@ def inject_base_styles():
             .hero { padding: 1.55rem 1.25rem; border-radius: 18px; }
             .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .workspace-heading { display: block; }
+            .difference-banner { grid-template-columns: 1fr; }
+            .signal-grid { grid-template-columns: 1fr; }
         }
         </style>
         """,
@@ -769,6 +927,152 @@ def render_classification_chart(stats: dict):
     st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
 
 
+def render_difference_banner():
+    st.markdown(
+        """
+        <div class="difference-banner">
+            <div>
+                <div class="difference-title">This is not a chat answer. It is a research asset.</div>
+                <p class="difference-copy">
+                    ChatGPT can produce a persuasive summary. Modus builds a reusable evidence layer:
+                    every claim is classified, every disagreement is preserved, source coverage is visible,
+                    and decision signals are calculated from the stored research graph.
+                </p>
+            </div>
+            <div class="difference-list">
+                <div class="difference-item"><span class="difference-check">✓</span>Claim-level evidence comparison</div>
+                <div class="difference-item"><span class="difference-check">✓</span>Contradictions shown side by side</div>
+                <div class="difference-item"><span class="difference-check">✓</span>Research coverage by theme</div>
+                <div class="difference-item"><span class="difference-check">✓</span>Reusable signals across future runs</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_decision_signal_board(analytics: dict):
+    signals = analytics.get("decision_signals", {}) if analytics else {}
+    strongest = signals.get("strongest_evidence", [])
+    needs_review = signals.get("needs_review", [])
+    gaps = signals.get("coverage_gaps", [])
+    cards = [
+        ("Strongest evidence", len(strongest), "themes with corroborated support", strongest[0] if strongest else "No corroborated theme yet"),
+        ("Needs review", len(needs_review), "themes containing contested evidence", needs_review[0] if needs_review else "No direct conflict detected"),
+        ("Coverage gaps", len(gaps), "themes needing more corroboration", gaps[0] if gaps else "All themes have findings"),
+    ]
+    cards_html = "".join(
+        f'<div class="signal-card"><div class="signal-kicker">{escape(label)}</div>'
+        f'<div class="signal-value">{value}</div><div class="signal-detail">{escape(detail)} · {escape(example)}</div></div>'
+        for label, value, detail, example in cards
+    )
+    st.markdown(f'<div class="signal-grid">{cards_html}</div>', unsafe_allow_html=True)
+
+
+def _chart_layout(height: int = 260):
+    return dict(
+        height=height,
+        margin=dict(l=8, r=24, t=18, b=12),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", size=11, color="#0f172a"),
+        legend=dict(orientation="h", y=1.12, x=0, bgcolor="rgba(0,0,0,0)"),
+    )
+
+
+def render_theme_evidence_chart(analytics: dict):
+    rows = analytics.get("sub_question_breakdown", []) if analytics else []
+    rows = [row for row in rows if row.get("finding_count", 0)]
+    if not rows:
+        st.info("Theme-level evidence will appear after findings are extracted.")
+        return
+
+    labels = [row["sub_question"][:52] + ("…" if len(row["sub_question"]) > 52 else "") for row in rows]
+    figure = go.Figure()
+    for key, label, color in [
+        ("corroborated_count", "Corroborated", "#15803d"),
+        ("single_source_count", "Single source", "#a16207"),
+        ("contested_count", "Contested", "#b91c1c"),
+    ]:
+        figure.add_trace(
+            go.Bar(
+                name=label,
+                y=labels,
+                x=[row.get(key, 0) for row in rows],
+                orientation="h",
+                marker_color=color,
+                hovertemplate=f"{label}: %{{x}}<extra></extra>",
+            )
+        )
+    figure.update_layout(**_chart_layout(300), barmode="stack", xaxis=dict(showgrid=False, title="Findings"), yaxis=dict(showgrid=False))
+    st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+
+
+def render_source_portfolio_chart(analytics: dict):
+    source_types = analytics.get("source_type_counts", {}) if analytics else {}
+    source_types = {label: value for label, value in source_types.items() if value}
+    if not source_types:
+        st.info("Source portfolio data will appear after sources are collected.")
+        return
+
+    figure = go.Figure(
+        go.Pie(
+            labels=list(source_types.keys()),
+            values=list(source_types.values()),
+            hole=0.62,
+            textinfo="label+percent",
+            textposition="outside",
+            marker=dict(colors=["#2563eb", "#7c3aed", "#0f766e", "#a16207", "#64748b"]),
+            hovertemplate="%{label}: %{value} sources<extra></extra>",
+        )
+    )
+    figure.update_layout(**_chart_layout(300), showlegend=False)
+    st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+
+
+def render_timeline_chart(analytics: dict):
+    timeline = analytics.get("timeline", []) if analytics else []
+    coverage = analytics.get("date_coverage_percent", 0) if analytics else 0
+    if not timeline:
+        st.info(
+            "No publisher dates were available for this run. The system will show a historical evidence trend "
+            "when retrieved sources expose publication metadata."
+        )
+        return
+
+    years = [point["year"] for point in timeline]
+    figure = go.Figure()
+    figure.add_trace(
+        go.Scatter(
+            x=years,
+            y=[point["source_count"] for point in timeline],
+            name="Sources",
+            mode="lines+markers",
+            line=dict(color="#2563eb", width=3),
+            marker=dict(size=8),
+            hovertemplate="%{x}: %{y} sources<extra></extra>",
+        )
+    )
+    figure.add_trace(
+        go.Scatter(
+            x=years,
+            y=[point["corroborated_count"] for point in timeline],
+            name="Corroborated findings",
+            mode="lines+markers",
+            line=dict(color="#15803d", width=3),
+            marker=dict(size=8),
+            hovertemplate="%{x}: %{y} corroborated findings<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        **_chart_layout(300),
+        xaxis=dict(showgrid=False, dtick=1, title="Publication year"),
+        yaxis=dict(showgrid=True, gridcolor="#e2e8f0", title="Evidence volume"),
+    )
+    st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+    st.caption(f"Historical view based on publisher dates for {coverage:.0f}% of collected sources; undated sources are excluded.")
+
+
 def _confidence(findings: list[dict]):
     if not findings:
         return "Unverified", "single_source"
@@ -808,28 +1112,45 @@ def render_conclusion_card(index: int, conclusion: dict):
         )
 
 
+def _render_claim_panel(label: str, finding: dict, css_class: str):
+    claim = escape(finding.get("claim") or "No claim text returned.")
+    detail = escape(finding.get("detail") or "")
+    title = escape(finding.get("source_title") or finding.get("source_domain") or "Source")
+    domain = escape(finding.get("source_domain") or "")
+    published = escape(finding.get("source_published_date") or "Date unavailable")
+    source_type = escape(finding.get("source_type") or "Web source")
+    url = finding.get("source_url") or ""
+    safe_url = escape(url, quote=True)
+    detail_html = f'<div class="claim-detail">{detail}</div>' if detail else ""
+    st.markdown(
+        f"""
+        <div class="claim-panel {css_class}">
+            <div class="claim-label">{escape(label)} · {source_type}</div>
+            <div class="claim-text">{claim}</div>
+            {detail_html}
+            <div class="source-meta">
+                <strong>{title}</strong> · {domain} · Published: {published}<br>
+                <a href="{safe_url}" target="_blank">Open source evidence ↗</a>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_contradiction_card(contradiction: dict):
+    explanation = escape(contradiction.get("explanation") or "The sources disagree on this point.")
     with st.container(border=True):
         st.markdown(
             f'<span class="badge badge-contested">Contradiction</span>&nbsp;&nbsp;'
-            f'{contradiction["explanation"] or "The sources disagree on this point."}',
+            f'<strong>{explanation}</strong>',
             unsafe_allow_html=True,
         )
-        left, right = st.columns(2)
+        left, right = st.columns(2, gap="large")
         with left:
-            st.caption("Source A")
-            st.write(contradiction["finding_a"]["claim"])
-            st.markdown(
-                f'[{contradiction["finding_a"]["source_url"]}]'
-                f'({contradiction["finding_a"]["source_url"]})'
-            )
+            _render_claim_panel("Source A", contradiction.get("finding_a", {}), "claim-panel-a")
         with right:
-            st.caption("Source B")
-            st.write(contradiction["finding_b"]["claim"])
-            st.markdown(
-                f'[{contradiction["finding_b"]["source_url"]}]'
-                f'({contradiction["finding_b"]["source_url"]})'
-            )
+            _render_claim_panel("Source B", contradiction.get("finding_b", {}), "claim-panel-b")
 
 
 def render_status_banner(detail: dict):
@@ -940,14 +1261,30 @@ with tab_new:
             if detail["status"] in ("done", "failed"):
                 with results_box.container():
                     if detail["status"] == "done":
+                        analytics = detail.get("analytics", {})
                         render_metric_row(detail["stats"])
+                        render_difference_banner()
+                        render_decision_signal_board(analytics)
 
+                        evidence_col, source_col = st.columns([1.25, 0.75], gap="large")
+                        with evidence_col:
+                            st.markdown("#### Evidence by research theme")
+                            st.caption("This shows where the pipeline has strong, single-source, or disputed coverage.")
+                            render_theme_evidence_chart(analytics)
+                        with source_col:
+                            st.markdown("#### Source portfolio")
+                            st.caption("A transparent view of the source mix behind the dossier.")
+                            render_source_portfolio_chart(analytics)
+
+                        st.markdown("#### Research horizon")
+                        st.caption("Publication-year signals separate current evidence from historical context without inventing dates.")
+                        render_timeline_chart(analytics)
+
+                        st.markdown("### Evidence profile")
                         chart_col, insight_col = st.columns([1.15, 0.85], gap="large")
                         with chart_col:
-                            st.markdown("#### Evidence profile")
                             render_classification_chart(detail["stats"])
                         with insight_col:
-                            st.markdown("#### What the numbers mean")
                             st.markdown(
                                 """
                                 <div class="surface">
