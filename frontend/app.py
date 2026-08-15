@@ -402,6 +402,24 @@ def inject_base_styles():
             box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
         }
 
+        div[data-testid="stDownloadButton"] > button,
+        div[data-testid="stDownloadButton"] > button p,
+        div[data-testid="stDownloadButton"] > button span {
+            min-height: 40px;
+            border: 0;
+            border-radius: 10px;
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+            font-weight: 750;
+        }
+
+        div[data-testid="stDownloadButton"] > button:hover,
+        div[data-testid="stDownloadButton"] > button:hover p,
+        div[data-testid="stDownloadButton"] > button:hover span {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
+        }
+
         .stButton > button[kind="primary"]:hover {
             color: #ffffff;
             background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%);
@@ -1415,6 +1433,19 @@ def _clip(value: str, limit: int = 190) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
+def _headline_conclusion(conclusions: list[dict]) -> dict:
+    if not conclusions:
+        return {"text": "The research run did not produce a clear headline conclusion.", "findings": []}
+
+    def score(conclusion: dict):
+        findings = conclusion.get("findings", []) or []
+        corroborated = sum(1 for finding in findings if finding.get("classification") == "corroborated")
+        contested = sum(1 for finding in findings if finding.get("classification") == "contested")
+        return (corroborated * 3 - contested * 2, corroborated, len(findings))
+
+    return max(conclusions, key=score)
+
+
 def render_compact_event_strip(analytics: dict, limit: int = 5):
     events = (analytics or {}).get("timeline_events", [])[:limit]
     if not events:
@@ -1449,7 +1480,8 @@ def render_executive_summary(detail: dict, analytics: dict):
     gaps = signals.get("coverage_gaps", [])
     needs_review = signals.get("needs_review", [])
 
-    headline = _clip(conclusions[0].get("text") if conclusions else "The research run did not produce a clear headline conclusion.", 230)
+    headline_conclusion = _headline_conclusion(conclusions)
+    headline = _clip(headline_conclusion.get("text"), 230)
     findings = stats.get("finding_count", 0)
     corroborated = stats.get("corroborated_count", 0)
     support_rate = round((corroborated / findings) * 100) if findings else 0
