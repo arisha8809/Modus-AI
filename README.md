@@ -1,9 +1,28 @@
-# Modus AI — Enterprise AI Research Agent
+# Modus-AI — Enterprise AI Research Agent
 
 Built for the **Modus Enterprise AI Build Challenge**, Assignment 9: *Enterprise AI Research Agent*.
 
 An AI application that conducts **structured, traceable enterprise research at scale**, on any
 industry or topic — not a single hardcoded case study, and not "ChatGPT with web search."
+
+> **Modus-AI turns a business question into an auditable evidence-to-decision workflow.**
+
+## Why this project stands out
+
+Modus-AI combines a five-stage multi-agent research pipeline with persistent structured evidence. It classifies a question, searches live sources, extracts claims and dated events, compares evidence, preserves contradictions, and produces an executive decision posture. The **Counterfactual Decision Lab** goes beyond a conventional summary by showing what supports the recommendation and what new evidence would change it.
+
+| Capability | Implementation |
+|---|---|
+| Structured research | Classifier → Search → Extraction → Evidence → Synthesis |
+| Traceability | Conclusion → Finding → Source URL |
+| Decision support | Scale, Pilot, or Validate posture with change conditions |
+| Research intelligence | Evidence coverage, conflicts, impact map, and dated timeline |
+| Reusable knowledge | SQLite persistence plus ChromaDB semantic search |
+
+## Quick evaluator path
+
+For a fast review, start with the live research workspace and ask **“How has AI impacted the stock market?”**. Then inspect the executive readout, Counterfactual Decision Lab, impact map, milestone timeline, and one source-backed finding. For the implementation, open [`docs/architecture_diagram.png`](docs/architecture_diagram.png), [`docs/data_model.png`](docs/data_model.png), and [`backend/agents/orchestrator.py`](backend/agents/orchestrator.py).
+
 
 Give it a research question (e.g. *"How is AI transforming retail operations?"*, *"What AI
 technologies are changing manufacturing?"*, or anything else — including a brand-new question
@@ -167,8 +186,11 @@ research data.
 
 ## Hosted version
 
-- **Frontend:** _[Streamlit Community Cloud link — added once deployed]_
-- **Backend API:** _[Render link — added once deployed]_
+- **Frontend:** https://modus-ai.streamlit.app
+- **Backend API:** https://modus-ai-zk0b.onrender.com
+- **Interactive API docs:** https://modus-ai-zk0b.onrender.com/docs
+
+The frontend may take a moment to wake on its free tier. If the public frontend is rebuilding, the repository remains fully runnable locally using the setup below.
 
 See [`docs/deployment.md`](docs/deployment.md) for how this was deployed and what happens if the
 Groq free tier or Render free tier becomes unavailable.
@@ -197,17 +219,23 @@ Modus-AI/
 │   └── routes/
 │       └── research.py      # /research and /knowledge-base endpoints
 ├── frontend/
-│   └── app.py                # Streamlit UI
+│   ├── app.py                # Streamlit UI
+│   └── requirements.txt      # Lightweight Streamlit Cloud dependencies
 ├── data/                      # SQLite + Chroma files (persistent, gitignored)
 ├── scripts/
 │   ├── prepare_demo_data.sh   # reversible clean-data setup for recording
 │   └── prepare_demo_data.ps1  # Windows PowerShell equivalent
 ├── docs/
 │   ├── architecture.md
+│   ├── architecture_diagram.png
+│   ├── data_model.png
+│   ├── api.md
 │   ├── model_library_inventory.md
 │   └── deployment.md
 ├── sample_data/                # example research runs for quick review
 ├── requirements.txt
+├── runtime.txt              # Render backend runtime
+├── .python-version          # Render Python version pin
 ├── .env.example
 └── README.md
 ```
