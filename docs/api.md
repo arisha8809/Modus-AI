@@ -1,4 +1,4 @@
-# Modus-AI API Documentation
+# The Brief API Documentation
 
 The backend is a FastAPI application. When running locally, interactive OpenAPI documentation is available at `http://localhost:8000/docs` and the raw OpenAPI schema is available at `http://localhost:8000/openapi.json`.
 

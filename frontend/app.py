@@ -1,4 +1,4 @@
-"""Modus AI — Enterprise Research Intelligence dashboard.
+"""The Brief — Enterprise Research Intelligence dashboard.
 
 The UI is intentionally evidence-first rather than chat-first. It gives users a
 clear research workspace, live pipeline visibility, structured findings, and
@@ -20,7 +20,7 @@ load_dotenv()
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(
-    page_title="Modus AI · Research Intelligence",
+    page_title="The Brief · Research Intelligence",
     page_icon="AI",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -1226,7 +1226,7 @@ def render_hero():
     st.markdown(
         """
         <section class="hero">
-            <div class="hero-kicker">Modus AI · Assignment 09</div>
+            <div class="hero-kicker">The Brief · Assignment 09</div>
             <h1 class="hero-title">Turn a question into an evidence-backed research dossier.</h1>
             <p class="hero-copy">
                 Explore any industry with a transparent multi-agent pipeline that plans the research,
@@ -2133,6 +2133,6 @@ with tab_about:
         )
 
 st.markdown(
-    '<div class="footer-note">Modus AI · Enterprise research intelligence · Structured evidence over unsupported summaries</div>',
+    '<div class="footer-note">The Brief · Enterprise research intelligence · Structured evidence over unsupported summaries</div>',
     unsafe_allow_html=True,
 )

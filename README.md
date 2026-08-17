@@ -1,15 +1,15 @@
-# Modus-AI — Enterprise AI Research Agent
+# The Brief — Enterprise Research Intelligence
 
 Built for the **Modus Enterprise AI Build Challenge**, Assignment 9: *Enterprise AI Research Agent*.
 
 An AI application that conducts **structured, traceable enterprise research at scale**, on any
 industry or topic — not a single hardcoded case study, and not "ChatGPT with web search."
 
-> **Modus-AI turns a business question into an auditable evidence-to-decision workflow.**
+> **The Brief turns a business question into an auditable evidence-to-decision workflow.**
 
 ## Why this project stands out
 
-Modus-AI combines a five-stage multi-agent research pipeline with persistent structured evidence. It classifies a question, searches live sources, extracts claims and dated events, compares evidence, preserves contradictions, and produces an executive decision posture. The **Counterfactual Decision Lab** goes beyond a conventional summary by showing what supports the recommendation and what new evidence would change it.
+The Brief combines a five-stage multi-agent research pipeline with persistent structured evidence. It classifies a question, searches live sources, extracts claims and dated events, compares evidence, preserves contradictions, and produces an executive decision posture. The **Counterfactual Decision Lab** goes beyond a conventional summary by showing what supports the recommendation and what new evidence would change it.
 
 | Capability | Implementation |
 |---|---|
@@ -21,7 +21,7 @@ Modus-AI combines a five-stage multi-agent research pipeline with persistent str
 
 ## Quick evaluator path
 
-For a fast review, start with the live research workspace and ask **“How has AI impacted the stock market?”**. Then inspect the executive readout, Counterfactual Decision Lab, impact map, milestone timeline, and one source-backed finding. For the implementation, open [`docs/architecture_diagram.png`](docs/architecture_diagram.png), [`docs/data_model.png`](docs/data_model.png), and [`backend/agents/orchestrator.py`](backend/agents/orchestrator.py).
+For a fast review of The Brief, start with the live research workspace and ask **“How has AI impacted the stock market?”**. Then inspect the executive readout, Counterfactual Decision Lab, impact map, milestone timeline, and one source-backed finding. For the implementation, open [`docs/architecture_diagram.png`](docs/architecture_diagram.png), [`docs/data_model.png`](docs/data_model.png), and [`backend/agents/orchestrator.py`](backend/agents/orchestrator.py).
 
 
 Give it a research question (e.g. *"How is AI transforming retail operations?"*, *"What AI
