@@ -11,7 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..db.session import get_session
-from ..db.models import ResearchTopic
+from ..db.models import ResearchTopic, PipelineEvent
 from ..db import vector_store
 from ..agents.orchestrator import run_pipeline
 from ..schemas import (
@@ -91,6 +91,16 @@ def _run_pipeline_in_background(topic_id: int):
     db = SessionLocal()
     try:
         run_pipeline(topic_id, db)
+    except Exception as exc:
+        topic = db.get(ResearchTopic, topic_id)
+        if topic is not None:
+            topic.status = "failed"
+            db.add(PipelineEvent(
+                topic_id=topic_id,
+                stage="error",
+                message=f"Research run failed: {str(exc)[:1000]}",
+            ))
+            db.commit()
     finally:
         db.close()
 
