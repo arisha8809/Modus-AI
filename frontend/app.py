@@ -59,16 +59,16 @@ def header():
 
 def new_brief():
     st.markdown('<div class="hero"><div class="kicker">Evidence-grounded decision support</div><h1>Make the signal<br><em>impossible to miss.</em></h1><p class="hero-copy">The Brief turns a complex business question into a clear, source-backed decision. It finds the signal, tests the evidence, and shows you exactly what deserves attention.</p><div class="hero-rule"></div></div>', unsafe_allow_html=True)
-    st.markdown('<div class="workspace"><main><div class="eyebrow">01 / Start an intelligence run</div><div class="section-title">What decision are you trying to make?</div><p class="section-copy">Give the engine a question with stakes. The result is not a chat response — it is a structured brief with evidence, uncertainty, and a next move.</p><div class="form-shell">', unsafe_allow_html=True)
+    st.markdown('<div class="workspace"><main><div class="eyebrow">01 / Start an intelligence run</div><div class="section-title">What do you need to understand?</div><p class="section-copy">The Brief currently researches public web sources. Ask a market, competitor, technology, or policy question and get a structured brief with evidence, uncertainty, and a next move.</p><div class="form-shell">', unsafe_allow_html=True)
     with st.form("brief_form"):
-        question = st.text_area("Business question", value="Which operational risks should leadership review before approving the next expansion phase?", height=130, label_visibility="visible")
+        question = st.text_area("Research question", value="How is the enterprise AI infrastructure market evolving, and where are the strongest opportunities for sovereign AI platforms?", height=130, label_visibility="visible")
         a, b = st.columns(2)
         with a:
-            st.selectbox("Intelligence mode", ["Operational risk review", "Executive decision brief", "Market intelligence", "Exception investigation"])
+            st.selectbox("Intelligence mode", ["Market landscape", "Technology intelligence", "Competitor scan", "Policy and risk review"])
         with b:
-            st.selectbox("Decision audience", ["Leadership team", "Operations", "Product and engineering", "Risk and compliance"])
+            st.selectbox("Output for", ["Product strategy", "Leadership team", "Product and engineering", "Research team"])
         submitted = st.form_submit_button("Run the brief  →", use_container_width=True)
-    st.markdown('</div></main><aside class="side"><div class="eyebrow">What happens next</div><div class="side-title">A controlled path from question to action.</div><div class="signal"><span class="signal-no">01</span><strong>Find the signal</strong><p>Break the question into focused research threads.</p></div><div class="signal"><span class="signal-no">02</span><strong>Test the evidence</strong><p>Compare sources, surface gaps, and expose contradictions.</p></div><div class="signal"><span class="signal-no">03</span><strong>Make it accountable</strong><p>Trace every important conclusion back to its source.</p></div></aside></div>', unsafe_allow_html=True)
+    st.markdown('</div></main><aside class="side"><div class="eyebrow">Current scope</div><div class="side-title">Public-web intelligence, made traceable.</div><div class="signal"><span class="signal-no">01</span><strong>Search the open web</strong><p>Use public sources to map a market, technology, or competitor landscape.</p></div><div class="signal"><span class="signal-no">02</span><strong>Test the evidence</strong><p>Compare sources, surface gaps, and expose contradictions.</p></div><div class="signal"><span class="signal-no">03</span><strong>Make it accountable</strong><p>Trace every important conclusion back to the source that supports it.</p></div></aside></div>', unsafe_allow_html=True)
     if submitted:
         if not question.strip():
             st.warning("Add a business question first.")
