@@ -1,7 +1,7 @@
-"""The Brief — Enterprise Research Intelligence dashboard.
+"""Modus Intelligence — evidence-grounded enterprise intelligence workspace.
 
 The UI is intentionally evidence-first rather than chat-first. It gives users a
-clear research workspace, live pipeline visibility, structured findings, and
+clear intelligence workspace, live pipeline visibility, structured findings, and
 traceable conclusions backed by source URLs.
 """
 
@@ -20,7 +20,7 @@ load_dotenv()
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(
-    page_title="The Brief · Research Intelligence",
+    page_title="Modus Intelligence · Evidence Workspace",
     page_icon="AI",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -1211,11 +1211,11 @@ def render_topbar():
             <div class="brand-lockup">
                 <div class="brand-mark">AI</div>
                 <div>
-                    <div class="brand-name">MODUS RESEARCH INTELLIGENCE</div>
-                    <div class="brand-subtitle">Enterprise evidence, built for decisions</div>
+                    <div class="brand-name">MODUS INTELLIGENCE</div>
+                    <div class="brand-subtitle">Evidence-grounded intelligence for operations</div>
                 </div>
             </div>
-            <div class="status-pill"><span class="status-dot"></span>Research engine ready</div>
+            <div class="status-pill"><span class="status-dot"></span>Intelligence system ready</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1226,16 +1226,16 @@ def render_hero():
     st.markdown(
         """
         <section class="hero">
-            <div class="hero-kicker">The Brief · Assignment 09</div>
-            <h1 class="hero-title">Turn a question into an evidence-backed research dossier.</h1>
+            <div class="hero-kicker">Modus Intelligence · Enterprise reasoning workspace</div>
+            <h1 class="hero-title">Turn fragmented information into a decision-ready intelligence brief.</h1>
             <p class="hero-copy">
-                Explore any industry with a transparent multi-agent pipeline that plans the research,
-                gathers sources, compares evidence, detects contradictions, and preserves every conclusion's provenance.
+Explore any business question with a transparent multi-agent pipeline that plans the investigation,
+                    gathers evidence, compares claims, detects contradictions, and preserves every conclusion's provenance.
             </p>
             <div class="hero-tags">
-                <span class="hero-tag">Dynamic research planning</span>
-                <span class="hero-tag">Structured evidence</span>
-                <span class="hero-tag">Full traceability</span>
+                <span class="hero-tag">Dynamic investigation planning</span>
+                <span class="hero-tag">Structured reasoning</span>
+                <span class="hero-tag">Full provenance</span>
             </div>
         </section>
         """,
@@ -1360,9 +1360,9 @@ def render_difference_banner():
         """
         <div class="difference-banner">
             <div>
-                <div class="difference-title">This is not a chat answer. It is a research asset.</div>
+                <div class="difference-title">This is not a chat answer. It is an intelligence asset.</div>
                 <p class="difference-copy">
-                    ChatGPT can produce a persuasive summary. Modus builds a reusable evidence layer:
+                    A chatbot can produce a persuasive summary. Modus builds a reusable evidence layer:
                     every claim is classified, every disagreement is preserved, source coverage is visible,
                     and decision signals are calculated from the stored research graph.
                 </p>
@@ -1370,7 +1370,7 @@ def render_difference_banner():
             <div class="difference-list">
                 <div class="difference-item"><span class="difference-check">✓</span>Claim-level evidence comparison</div>
                 <div class="difference-item"><span class="difference-check">✓</span>Contradictions shown side by side</div>
-                <div class="difference-item"><span class="difference-check">✓</span>Research coverage by theme</div>
+                <div class="difference-item"><span class="difference-check">✓</span>Evidence coverage by theme</div>
                 <div class="difference-item"><span class="difference-check">✓</span>Reusable signals across future runs</div>
             </div>
         </div>
@@ -1898,7 +1898,7 @@ def render_status_banner(detail: dict):
         f"""
         <div class="status-banner">
             <div><div class="status-label">Run status</div><div class="status-value">{status}</div></div>
-            <div><div class="status-label">Research domain</div><div class="status-value">{domain_markup}</div></div>
+            <div><div class="status-label">Detected domain</div><div class="status-value">{domain_markup}</div></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1911,7 +1911,7 @@ render_topbar()
 render_hero()
 
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-tab_new, tab_kb, tab_about = st.tabs(["Research workspace", "Knowledge base", "Architecture"])
+tab_new, tab_kb, tab_about = st.tabs(["Intelligence workspace", "Evidence library", "System architecture"])
 
 
 # --------------------------------------------------------------------------- Research workspace
@@ -1920,10 +1920,10 @@ with tab_new:
         """
         <div class="workspace-heading">
             <div>
-                <div class="eyebrow">Start an investigation</div>
+                <div class="eyebrow">Start an intelligence run</div>
                 <h2 class="section-title">What do you need to understand?</h2>
                 <p class="section-note">
-                    Ask a business research question in plain language. The system will determine the domain,
+                    Ask a business question in plain language. The system will determine the domain,
                     plan the investigation, retrieve evidence, and build a traceable answer.
                 </p>
             </div>
@@ -1936,26 +1936,26 @@ with tab_new:
     with input_col:
         st.markdown('<div class="surface">', unsafe_allow_html=True)
         question = st.text_area(
-            "Research question",
-            placeholder="Example: How is AI transforming retail operations?",
+            "Business question",
+            placeholder="Example: How is AI changing maintenance operations in manufacturing?",
             height=118,
             label_visibility="visible",
         )
-        submit = st.button("Run evidence-backed research", type="primary", use_container_width=True)
-        st.caption("Try a new industry or topic. The pipeline is designed for live, domain-agnostic questions.")
+        submit = st.button("Run intelligence brief", type="primary", use_container_width=True)
+        st.caption("Try any industry or topic. The pipeline is designed for live, domain-agnostic questions.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with workflow_col:
         st.markdown(
             """
             <div class="surface">
-                <div class="surface-title">What happens next</div>
-                <p class="surface-copy">Every stage produces structured, reviewable output.</p>
+                <div class="surface-title">How the intelligence run works</div>
+                <p class="surface-copy">Every stage produces structured, reviewable evidence.</p>
                 <div class="workflow-list">
-                    <div class="workflow-item"><span class="workflow-number">01</span>Classify the domain and plan sub-questions</div>
-                    <div class="workflow-item"><span class="workflow-number">02</span>Search and collect relevant source pages</div>
+                    <div class="workflow-item"><span class="workflow-number">01</span>Detect the domain and plan sub-questions</div>
+                    <div class="workflow-item"><span class="workflow-number">02</span>Discover and collect relevant source pages</div>
                     <div class="workflow-item"><span class="workflow-number">03</span>Extract and compare discrete findings</div>
-                    <div class="workflow-item"><span class="workflow-number">04</span>Synthesize conclusions with provenance</div>
+                    <div class="workflow-item"><span class="workflow-number">04</span>Synthesize decisions with provenance</div>
                 </div>
             </div>
             """,
@@ -2014,10 +2014,10 @@ with tab_kb:
         <div class="workspace-heading">
             <div>
                 <div class="eyebrow">Reusable intelligence</div>
-                <h2 class="section-title">Knowledge base</h2>
+                <h2 class="section-title">Evidence library</h2>
                 <p class="section-note">
-                    Browse past investigations and search across every finding collected so far.
-                    This is where individual research runs become a reusable intelligence asset.
+                    Browse past intelligence runs and search across every finding collected so far.
+                    This is where individual investigations become a reusable evidence asset.
                 </p>
             </div>
         </div>
@@ -2026,11 +2026,11 @@ with tab_kb:
     )
 
     topics = api_get("/research", stop_on_error=False)
-    st.markdown("#### Past research runs")
+    st.markdown("#### Past intelligence runs")
     if topics is None:
         st.info("The knowledge base will appear here when the research engine is connected.")
     elif not topics:
-        st.info("No research runs yet. Start an investigation in the Research workspace.")
+        st.info("No intelligence runs yet. Start one in the Intelligence workspace.")
     for topic in topics or []:
         domain_markup = (
             f'<span class="badge badge-domain">{topic.get("domain")}</span>'
@@ -2046,10 +2046,10 @@ with tab_kb:
                     st.markdown(f'- {conclusion["text"]}')
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Search across findings")
-    st.caption("Use a concept, business problem, technology, or capability to find related evidence.")
+    st.markdown("#### Search across evidence")
+    st.caption("Use a concept, business problem, technology, or capability to find related evidence across runs.")
     kb_query = st.text_input(
-        "Knowledge-base query",
+        "Evidence-library query",
         key="kb_search",
         placeholder="Example: demand forecasting",
         label_visibility="collapsed",
@@ -2083,10 +2083,10 @@ with tab_about:
         """
         <div class="workspace-heading">
             <div>
-                <div class="eyebrow">How it works</div>
-                <h2 class="section-title">A transparent research architecture</h2>
+                <div class="eyebrow">System design</div>
+                <h2 class="section-title">A transparent intelligence architecture</h2>
                 <p class="section-note">
-                    The application separates interface, orchestration, intelligence, persistence, and external research
+                    The application separates interface, orchestration, reasoning, persistence, and external discovery
                     so every stage can be inspected and explained.
                 </p>
             </div>
@@ -2108,12 +2108,12 @@ with tab_about:
             """
             | Layer | Component | Role |
             |---|---|---|
-            | UI | Streamlit | Research workspace and dossier dashboard |
+            | UI | Streamlit | Intelligence workspace and evidence dashboard |
             | API | FastAPI | Run control, polling, and structured responses |
-            | Intelligence | Five-stage agent pipeline | Plan, search, extract, compare, synthesize |
+            | Intelligence | Five-stage agent pipeline | Plan, discover, extract, compare, synthesize |
             | Knowledge | SQLite + ChromaDB | Persistent records and cross-run retrieval |
             | Research | Tavily | External source discovery and page content |
-            | LLM | Groq · Llama 3.3 70B | Structured agent reasoning |
+            | LLM | Groq · Llama 3.1 8B Instant | Structured agent reasoning |
             """
         )
     with principles_col:
@@ -2133,6 +2133,6 @@ with tab_about:
         )
 
 st.markdown(
-    '<div class="footer-note">The Brief · Enterprise research intelligence · Structured evidence over unsupported summaries</div>',
+    '<div class="footer-note">Modus Intelligence · Evidence-grounded decisions over unsupported summaries</div>',
     unsafe_allow_html=True,
 )
