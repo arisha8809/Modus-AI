@@ -7,7 +7,7 @@ and — for any free-tier external service — what happens if it becomes paid o
 
 | Component | Provider | Model | Cost | Licence |
 |---|---|---|---|---|
-| LLM (all agents) | Groq | `llama-3.3-70b-versatile` (Meta's open-weight Llama 3.3) | Free tier (no card required) | Llama 3.3 Community License (model); Groq API usage under Groq's free-tier terms |
+| LLM (all agents) | Groq | `llama-3.1-8b-instant` (Meta's open-weight Llama 3.1) | Groq API usage under the account's plan | Llama 3.1 Community License (model); Groq API usage under Groq's terms |
 | Embeddings | scikit-learn `HashingVectorizer` (stateless, offline, no model download) | runs locally | Free, open-source | BSD |
 
 **If Groq's free tier becomes paid or unavailable:** all LLM calls go through a single file

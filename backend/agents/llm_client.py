@@ -9,15 +9,18 @@ local Ollama model only requires editing this file, nothing in the agents
 themselves. This is the direct answer to the challenge's "what happens if
 this service becomes paid or unavailable?" requirement.
 
-Model used: llama-3.3-70b-versatile (open-weight Llama model, served free by
-Groq). Swap MODEL_NAME below to change it.
+Model used: llama-3.1-8b-instant through the same Groq API used by the
+original project. The older llama-3.3-70b-versatile identifier is mapped to
+this fallback because Groq no longer grants every key access to that model.
 """
 
 import os
 import json
 from groq import Groq
 
-MODEL_NAME = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+DEFAULT_MODEL = "llama-3.1-8b-instant"
+configured_model = os.environ.get("GROQ_MODEL", DEFAULT_MODEL)
+MODEL_NAME = DEFAULT_MODEL if configured_model == "llama-3.3-70b-versatile" else configured_model
 
 _client = None
 
