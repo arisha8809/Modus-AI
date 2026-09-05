@@ -1,256 +1,106 @@
-# The Brief — Enterprise Research Intelligence
+# The Brief
 
-Built for the **Modus Enterprise AI Build Challenge**, Assignment 9: *Enterprise AI Research Agent*.
+**The Brief** is an evidence-grounded enterprise intelligence workspace. It turns a business question into a structured research pipeline, preserves the evidence behind each finding, surfaces contradictions, and produces a decision-ready brief.
 
-An AI application that conducts **structured, traceable enterprise research at scale**, on any
-industry or topic — not a single hardcoded case study, and not "ChatGPT with web search."
+This is a focused proof-of-capability product rather than a claim to reproduce an entire enterprise AI platform. It demonstrates the engineering path from an AI prototype to a service that can be measured, containerized, deployed, and improved.
 
-> **The Brief turns a business question into an auditable evidence-to-decision workflow.**
+## Why this product
 
-## Why this project stands out
+Enterprise AI is most useful when it connects fragmented information to accountable decisions. The Brief is designed around that principle:
 
-The Brief combines a five-stage multi-agent research pipeline with persistent structured evidence. It classifies a question, searches live sources, extracts claims and dated events, compares evidence, preserves contradictions, and produces an executive decision posture. The **Counterfactual Decision Lab** goes beyond a conventional summary by showing what supports the recommendation and what new evidence would change it.
+```text
+Business question → discovery → evidence collection → reasoning → validation → recommendation
+```
 
-| Capability | Implementation |
+The central traceability path is:
+
+```text
+Conclusion → supporting finding → source URL
+```
+
+That makes the result inspectable instead of presenting an opaque chatbot answer.
+
+## What the demo shows
+
+| Capability | Demonstrated by |
 |---|---|
-| Structured research | Classifier → Search → Extraction → Evidence → Synthesis |
-| Traceability | Conclusion → Finding → Source URL |
-| Decision support | Scale, Pilot, or Validate posture with change conditions |
-| Research intelligence | Evidence coverage, conflicts, impact map, and dated timeline |
-| Reusable knowledge | SQLite persistence plus ChromaDB semantic search |
+| AI product workflow | Guided brief creation and multi-stage pipeline |
+| Python backend | FastAPI service with typed request/response models |
+| AI application architecture | Multi-agent research, structured extraction, classification, and synthesis |
+| RAG and vector search | Persistent Chroma knowledge base and semantic finding search |
+| Data engineering | SQLite relational graph for topics, sources, findings, and conclusions |
+| Enterprise reasoning | Corroboration, contradictions, coverage gaps, and decision signals |
+| Production posture | Health metadata, persisted pipeline events, Docker, Compose, and environment configuration |
+| Product thinking | Evidence explorer and a clear path from intelligence to human action |
 
-## Quick evaluator path
+## Run locally
 
-For a fast review of The Brief, start with the live research workspace and ask **“How has AI impacted the stock market?”**. Then inspect the executive readout, Counterfactual Decision Lab, impact map, milestone timeline, and one source-backed finding. For the implementation, open [`docs/architecture_diagram.png`](docs/architecture_diagram.png), [`docs/data_model.png`](docs/data_model.png), and [`backend/agents/orchestrator.py`](backend/agents/orchestrator.py).
+### Option A: Docker Compose
 
-
-Give it a research question (e.g. *"How is AI transforming retail operations?"*, *"What AI
-technologies are changing manufacturing?"*, or anything else — including a brand-new question
-typed live) and it will:
-
-```
-Classify domain & define sub-questions
-        → Search sources
-        → Collect & store source pages
-        → Extract structured findings
-        → Compare evidence across sources
-        → Classify findings (corroborated / contested / single-source)
-        → Detect contradictions
-        → Generate conclusions
-        → Every conclusion is traceable back to the findings and source URLs that support it
+```bash
+docker compose up --build
 ```
 
-The result is an **evidence-first research dossier**, not just a cited paragraph. The dashboard shows
-claim-level contradictions side by side, evidence coverage by research theme, source portfolio by
-provenance type, decision signals for strongest evidence and review areas, and a publication-year
-research horizon when source dates are available, plus a major-events timeline for launches, regulations,
-company moves, market events, breakthroughs, adoption milestones, and risk events explicitly dated in
-retrieved sources. The executive view also includes a **Counterfactual Decision Lab**: a transparent
-posture of *Scale what works*, *Pilot with guardrails*, or *Validate before scaling*, the claims that
-support that posture, and the exact contradiction or coverage gap that would change it. All metrics are
-calculated from the stored research graph, and undated sources are explicitly excluded from the timeline
-rather than being assigned made-up years.
+Open the workspace at `http://localhost:8501`. The API and OpenAPI documentation are available at `http://localhost:8000/docs`.
 
-All results persist in a reusable knowledge base — restarting the app does not lose anything,
-and every past research run remains searchable.
+To stop the demo:
 
----
+```bash
+docker compose down
+```
+
+The named `modus-data` volume keeps the SQLite and Chroma data between container restarts.
+
+### Option B: Run services directly
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -r frontend/requirements.txt
+cp .env.example .env
+
+uvicorn backend.main:app --reload --port 8000
+```
+
+In a second terminal:
+
+```bash
+source .venv/bin/activate
+streamlit run frontend/app.py
+```
+
+The LLM and web-search pipeline requires `GROQ_API_KEY` and `TAVILY_API_KEY`. The frontend remains useful for inspecting persisted demo data and the system view without those keys.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  UI LAYER            Streamlit (frontend/app.py)                │
-├─────────────────────────────────────────────────────────────────┤
-│  API LAYER           FastAPI (backend/main.py, backend/routes/)  │
-├─────────────────────────────────────────────────────────────────┤
-│  AI INTELLIGENCE     5-agent pipeline (backend/agents/)          │
-│                      Classifier → Search → Extraction →          │
-│                      Evidence → Synthesis                        │
-│                      LLM: Groq free-tier API (Llama 3.3 70B)     │
-├─────────────────────────────────────────────────────────────────┤
-│  DATA & KNOWLEDGE    SQLite (structured, relational, persistent) │
-│                      + ChromaDB (vector store, semantic search)  │
-├─────────────────────────────────────────────────────────────────┤
-│  EXTERNAL RESEARCH   Tavily search API (agent-oriented, free tier)        │
-└─────────────────────────────────────────────────────────────────┘
+```text
+Streamlit workspace
+        │ REST / JSON
+        ▼
+FastAPI intelligence API
+        │
+        ├── Multi-stage agent orchestrator
+        ├── SQLite structured knowledge graph
+        ├── Chroma persistent semantic index
+        └── Pipeline events and traceability records
 ```
 
-Full detail, including why each choice was made, is in [`docs/architecture.md`](docs/architecture.md). The submission-ready architecture diagram is available as [`PNG`](docs/architecture_diagram.png) with its editable [`Mermaid source`](docs/architecture_diagram.mmd).
+The API is intentionally provider-aware: the agent logic is separated from the LLM client so the hosted provider can later be replaced by another OpenAI-compatible endpoint or a local model runtime. The next product extension is a decision-to-action loop where a reviewed recommendation can create a controlled operational task with an audit record.
 
-### Why this satisfies the challenge's "not accepted" list
+## API surface
 
-- **Not a wrapper around a hosted LLM UI** — the intelligence is a 5-stage agent pipeline with
-  real branching logic (classification, evidence comparison, contradiction detection), each
-  stage backed by its own prompt and stored output.
-- **Not one giant prompt** — each agent has a narrow job and its own file
-  (`backend/agents/*.py`); you can point to exactly which agent does what.
-- **Not hardcoded for the demo** — the domain is detected live from whatever question is typed;
-  nothing assumes retail, manufacturing, or any other fixed topic.
-- **Data persists** — SQLite + Chroma files under `./data`; restarting the app does not clear
-  the knowledge base.
-- **Traceable** — every `Conclusion` row in the database links (via a join table) to the exact
-  `Finding` rows that support it, which in turn link to the `Source` URL they came from.
+- `GET /health` — service status and runtime metadata.
+- `POST /research` — create a brief and start the background pipeline.
+- `GET /research` — list saved briefs.
+- `GET /research/{topic_id}` — retrieve the complete evidence dossier.
+- `GET /knowledge-base/search?q=...` — search findings across all briefs.
+- `/docs` — interactive FastAPI documentation.
 
----
+## Deployment direction
 
-## Running it locally
+The local Compose topology is deliberately close to a cloud deployment topology. The API container can move to Google Cloud Run, with persistent relational/vector storage, Secret Manager for credentials, Cloud Logging for structured events, and GitHub Actions for build and deployment automation. A larger installation can replace SQLite with PostgreSQL and run the orchestration layer as a separately scaled worker service.
 
-### 1. Prerequisites
-- Python 3.11+
-- A free Groq API key: [console.groq.com](https://console.groq.com) (no credit card required)
-- A free Tavily API key: [tavily.com](https://tavily.com) (1,000 free searches/month, no card)
+## Honest scope
 
-### 2. Setup
-```bash
-git clone https://github.com/arisha8809/Modus-AI.git
-cd Modus-AI
-python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-# edit .env and paste your GROQ_API_KEY
-```
-
-### 3. Run the backend
-```bash
-uvicorn backend.main:app --reload --port 8000
-```
-
-### 4. Run the frontend (in a second terminal)
-```bash
-streamlit run frontend/app.py
-```
-
-Open the Streamlit URL it prints (usually `http://localhost:8501`), type a research question,
-and watch the pipeline run.
-
----
-
-## Recording-ready demo runbook
-
-The repository keeps persistent research data under `./data`, but the checked-in repository starts
-with an empty data directory. For a clean recording, do not delete a working knowledge base. Use the
-reversible helper below to create an isolated demo directory; if that directory already exists, it is
-renamed to a timestamped backup first.
-
-```bash
-./scripts/prepare_demo_data.sh ./demo_data
-DATA_DIR=./demo_data uvicorn backend.main:app --reload --port 8000
-```
-
-On Windows PowerShell, use the equivalent helper and environment-variable syntax:
-
-```powershell
-.\scripts\prepare_demo_data.ps1 .\demo_data
-$env:DATA_DIR = "$PWD\demo_data"
-uvicorn backend.main:app --reload --port 8000
-```
-
-In a second terminal, start the frontend:
-
-```bash
-BACKEND_URL=http://localhost:8000 streamlit run frontend/app.py
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:BACKEND_URL = "http://localhost:8000"
-streamlit run frontend/app.py
-```
-
-Use the challenge’s sample question as the primary run:
-
-> **How has AI impacted retail operations?**
-
-The fast demo path is to show the completed executive readout first: the headline, evidence KPIs,
-impact map, Decision Lab posture, and compact milestone strip. Then open the detailed dossier only long
-enough to show one contradiction or evidence gap and one source link.
-
-For the Knowledge Base demonstration, run one optional second question after the retail run:
-
-> **What AI technologies are changing manufacturing?**
-
-Then open **Knowledge base**. The page lists both completed investigations and provides semantic search
-across all stored findings. Search for a shared concept such as `demand forecasting` or `predictive
-maintenance` to demonstrate that findings remain reusable across research runs rather than disappearing
-with the original answer. If you want the shortest recording, use only the retail question and show the
-Knowledge Base empty-state behavior before running it, then return to the completed dossier.
-
-The Knowledge Base is not a separate model or a static sample page. It reads completed runs from the
-SQLite store and searches findings indexed in the persistent local Chroma collection. A fresh `DATA_DIR`
-therefore gives the recording a clean starting point without changing any deployed or previously saved
-research data.
-
----
-
-## Hosted version
-
-- **Frontend:** https://modus-ai.streamlit.app
-- **Backend API:** https://modus-ai-zk0b.onrender.com
-- **Interactive API docs:** https://modus-ai-zk0b.onrender.com/docs
-
-The frontend may take a moment to wake on its free tier. If the public frontend is rebuilding, the repository remains fully runnable locally using the setup below.
-
-See [`docs/deployment.md`](docs/deployment.md) for how this was deployed and what happens if the
-Groq free tier or Render free tier becomes unavailable.
-
----
-
-## Repository structure
-
-```
-Modus-AI/
-├── backend/
-│   ├── main.py              # FastAPI app entrypoint
-│   ├── schemas.py           # API request/response models
-│   ├── db/
-│   │   ├── models.py        # SQLAlchemy schema (the persistent knowledge base)
-│   │   ├── session.py       # DB engine/session setup
-│   │   └── vector_store.py  # ChromaDB wrapper for semantic search
-│   ├── agents/
-│   │   ├── llm_client.py       # single entry point for all LLM calls (Groq)
-│   │   ├── web_tools.py        # free web search + page fetching
-│   │   ├── classifier_agent.py # domain detection + sub-question planning
-│   │   ├── extraction_agent.py # structured findings from page text
-│   │   ├── evidence_agent.py   # cross-source comparison, contradiction detection
-│   │   ├── synthesis_agent.py  # final conclusions, linked to supporting findings
-│   │   └── orchestrator.py     # runs the full pipeline, stage by stage
-│   └── routes/
-│       └── research.py      # /research and /knowledge-base endpoints
-├── frontend/
-│   ├── app.py                # Streamlit UI
-│   └── requirements.txt      # Lightweight Streamlit Cloud dependencies
-├── data/                      # SQLite + Chroma files (persistent, gitignored)
-├── scripts/
-│   ├── prepare_demo_data.sh   # reversible clean-data setup for recording
-│   └── prepare_demo_data.ps1  # Windows PowerShell equivalent
-├── docs/
-│   ├── architecture.md
-│   ├── architecture_diagram.png
-│   ├── data_model.png
-│   ├── api.md
-│   ├── model_library_inventory.md
-│   └── deployment.md
-├── sample_data/                # example research runs for quick review
-├── requirements.txt
-├── runtime.txt              # Render backend runtime
-├── .python-version          # Render Python version pin
-├── .env.example
-└── README.md
-```
-
-## API documentation
-
-The endpoint summary is in [`docs/api.md`](docs/api.md). When the backend is running, FastAPI also exposes interactive Swagger documentation at `/docs` and the raw OpenAPI schema at `/openapi.json`.
-
-## Models & libraries used
-
-See [`docs/model_library_inventory.md`](docs/model_library_inventory.md) for the full list with
-licences, as required by the challenge deliverables. The database/data-model submission artifact is [`docs/data_model.png`](docs/data_model.png), with editable [`Mermaid source`](docs/data_model.mmd) and the implementation in [`backend/db/models.py`](backend/db/models.py).
-
-## What was built vs. AI-assisted
-
-This project was built collaboratively with an AI coding assistant (Claude). Every component —
-schema design, agent prompts, pipeline orchestration, API routes, and UI — was reviewed and is
-understood and explainable by the candidate, per the challenge's disclosure requirement.
+The current version focuses on the highest-value proof points: evidence-grounded reasoning, traceability, a clean demo flow, persistence, and reproducible container startup. Authentication, multi-tenant isolation, enterprise connectors, and human-approved external actions are intentionally identified as the next production milestones rather than being represented as complete capabilities.

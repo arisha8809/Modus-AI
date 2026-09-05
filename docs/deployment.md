@@ -1,4 +1,18 @@
-# Deployment (free hosting)
+# Deployment
+
+## Local production-shaped demo
+
+The preferred demo path is Docker Compose. It starts the FastAPI API and Streamlit workspace with a named persistent volume:
+
+```bash
+docker compose up --build
+```
+
+The workspace is available at `http://localhost:8501`, the API at `http://localhost:8000`, and interactive API documentation at `http://localhost:8000/docs`.
+
+The API image includes a container health check against `/health`. The frontend waits for the API health check before starting.
+
+## Cloud direction
 
 Goal: an evaluator should be able to open a link and use the app directly, without any local
 setup, while still satisfying the challenge's "free/open-source/free-tier only" and "data must

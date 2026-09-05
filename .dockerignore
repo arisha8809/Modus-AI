@@ -1,0 +1,13 @@
+.git
+.github
+.env
+data/*.sqlite3
+data/chroma
+__pycache__
+*.pyc
+.venv
+venv
+.streamlit
+README.md
+docs
+sample_data

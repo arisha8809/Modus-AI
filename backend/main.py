@@ -7,6 +7,8 @@ Run locally with:
 See README.md for the full architecture and setup instructions.
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -17,9 +19,9 @@ from .db.session import init_db
 from .routes.research import router as research_router
 
 app = FastAPI(
-    title="Enterprise AI Research Agent",
-    description="Structured, traceable, multi-agent enterprise research at scale.",
-    version="1.0.0",
+    title="The Brief Intelligence API",
+    description="Evidence-grounded enterprise intelligence with traceable decisions.",
+    version="1.1.0",
 )
 
 # Streamlit frontend (local or hosted) needs to call this API cross-origin.
@@ -38,6 +40,11 @@ def on_startup():
     init_db()
 
 
-@app.get("/health")
+@app.get("/health", tags=["system"])
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "the-brief-api",
+        "version": app.version,
+        "environment": os.environ.get("APP_ENV", "development"),
+    }
