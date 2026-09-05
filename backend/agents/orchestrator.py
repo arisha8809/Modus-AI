@@ -42,7 +42,7 @@ def _log(db: Session, topic: ResearchTopic, stage: str, message: str):
     db.commit()
 
 
-def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 3):
+def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 2):
     topic = db.get(ResearchTopic, topic_id)
     if topic is None:
         return
@@ -62,7 +62,9 @@ def run_pipeline(topic_id: int, db: Session, max_sources_per_subq: int = 3):
 
         all_findings_for_synthesis = []  # [{id, claim, classification}]
 
-        for sub_q_text in plan["sub_questions"]:
+        # Keep interactive demos bounded while still showing the complete
+        # multi-stage workflow. Production ingestion can raise this limit.
+        for sub_q_text in plan["sub_questions"][:3]:
             sub_q = SubQuestion(topic_id=topic.id, text=sub_q_text)
             db.add(sub_q)
             db.commit()

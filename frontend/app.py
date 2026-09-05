@@ -76,6 +76,7 @@ def new_brief():
         result = post("/research", {"question": question.strip()})
         if result:
             st.session_state.topic_id = result.get("id")
+            st.session_state.run_started_at = time.time()
             time.sleep(.35)
             st.rerun()
 
@@ -115,6 +116,14 @@ def main():
         detail = get(f"/research/{topic_id}")
         if detail:
             result_view(detail)
+            if detail.get("status") in {"pending", "running"}:
+                elapsed = time.time() - st.session_state.get("run_started_at", time.time())
+                if elapsed < 120:
+                    st.info(f"The brief is running. Latest pipeline data is being refreshed automatically ({int(elapsed)}s).")
+                    time.sleep(3)
+                    st.rerun()
+                else:
+                    st.warning("This run has exceeded the 2-minute demo window. Start a new brief or inspect the API logs.")
             return
         st.session_state.pop("topic_id", None)
     new_brief()
